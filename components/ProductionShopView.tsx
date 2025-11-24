@@ -1,9 +1,9 @@
 
-
 import React, { useState } from 'react';
 import { ProductionLine, WorkshopData } from '../types';
 import { GlassCard } from './GlassCard';
 import { Hammer, Box, FlaskConical, Wrench, AlertTriangle, CheckCircle2, User, Calendar } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProductionShopViewProps {
   workshops: WorkshopData[];
@@ -101,6 +101,7 @@ const MachineSVG = ({ type }: { type: string }) => {
 };
 
 export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshops }) => {
+  const { t } = useLanguage();
   const [activeShopId, setActiveShopId] = useState(workshops[0].id);
   const currentShop = workshops.find(w => w.id === activeShopId) || workshops[0];
   const [hoveredLine, setHoveredLine] = useState<ProductionLine | null>(null);
@@ -109,12 +110,12 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
   // SQDCIP Helpers
   const getSQDCIPInfo = (key: string, status: string) => {
     const map: any = {
-      'S': { title: 'Safety', error: 'Minor hand injury reported', days: [1,1,1,1,1,1,0] },
-      'Q': { title: 'Quality', error: 'FPY dropped below 98%', days: [1,1,0,0,1,1,1] },
-      'D': { title: 'Delivery', error: 'Shipment delayed (Logistics)', days: [1,1,1,1,0,1,1] },
-      'C': { title: 'Cost', error: 'Scrap cost exceeded budget', days: [1,0,1,1,1,1,1] },
-      'I': { title: 'Inventory', error: 'Resin stock critical low', days: [1,1,1,1,1,0,0] },
-      'P': { title: 'People', error: 'Unexpected absenteeism > 5%', days: [1,1,1,0,1,1,1] },
+      'S': { title: t('safety'), error: 'Minor hand injury reported', days: [1,1,1,1,1,1,0] },
+      'Q': { title: t('quality_sqdcip'), error: 'FPY dropped below 98%', days: [1,1,0,0,1,1,1] },
+      'D': { title: t('delivery'), error: 'Shipment delayed (Logistics)', days: [1,1,1,1,0,1,1] },
+      'C': { title: t('cost'), error: 'Scrap cost exceeded budget', days: [1,0,1,1,1,1,1] },
+      'I': { title: t('inventory'), error: 'Resin stock critical low', days: [1,1,1,1,1,0,0] },
+      'P': { title: t('people'), error: 'Unexpected absenteeism > 5%', days: [1,1,1,0,1,1,1] },
     };
     return map[key] || { title: key, error: 'Unknown', days: [] };
   };
@@ -155,13 +156,13 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
              </div>
            ) : (
              <div className="text-xs text-gray-400 mb-3 flex items-center gap-1.5 relative z-10">
-               <CheckCircle2 size={12} className="text-green-500" /> System functioning normally.
+               <CheckCircle2 size={12} className="text-green-500" /> {t('systemNormal')}
              </div>
            )}
 
            <div className="relative z-10">
              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-               <Calendar size={10} /> 7-Day History
+               <Calendar size={10} /> {t('history7d')}
              </div>
              <div className="flex justify-between gap-1">
                 {getSQDCIPInfo(label, status).days.map((val: number, i: number) => (
@@ -218,8 +219,8 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
           {/* SQDCIP Dashboard - Explicitly visible overflow */}
           <GlassCard className="p-4 flex flex-wrap justify-between items-center gap-4 bg-black/40 !overflow-visible relative z-20">
              <div className="flex flex-col">
-                <span className="text-xs text-gray-500 uppercase tracking-widest">Shop Status</span>
-                <span className="text-xl font-bold text-white uppercase">{currentShop.name} Performance</span>
+                <span className="text-xs text-gray-500 uppercase tracking-widest">{t('shopStatus')}</span>
+                <span className="text-xl font-bold text-white uppercase">{currentShop.name} {t('performance')}</span>
              </div>
              <div className="flex gap-2 relative z-50">
                 <SQDCIPBadge label="S" status={currentShop.sqdcip.s} />
@@ -251,7 +252,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                
                {/* Map Header */}
                <div className="absolute top-4 left-4 z-0 pointer-events-none">
-                 <span className="text-[10px] text-yellow-400 font-mono border border-yellow-400 px-2 py-0.5 rounded">LIVE VIEW</span>
+                 <span className="text-[10px] text-yellow-400 font-mono border border-yellow-400 px-2 py-0.5 rounded">{t('liveView')}</span>
                </div>
 
                {/* Machines Grid */}
@@ -314,17 +315,17 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                           <div className="p-3 bg-[#0B1120] relative z-10">
                              <div className="flex justify-between items-center mb-1">
                                 <span className="font-bold text-white text-sm">{line.currentProduct.name}</span>
-                                <span className="text-[10px] text-blue-400 border border-blue-400/30 px-1 rounded">RUNNING</span>
+                                <span className="text-[10px] text-blue-400 border border-blue-400/30 px-1 rounded">{t('running')}</span>
                              </div>
                              
                              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-                                <div className="text-gray-500">PN: <span className="text-gray-300 font-mono">{line.currentProduct.partNumber}</span></div>
+                                <div className="text-gray-500">{t('partNo')}: <span className="text-gray-300 font-mono">{line.currentProduct.partNumber}</span></div>
                                 <div className="text-gray-500 text-right">Eff: <span className="text-green-400 font-mono">{line.currentProduct.efficiency}%</span></div>
                              </div>
                              
                              <div className="mt-2">
                                 <div className="flex justify-between mb-1 text-[10px] text-gray-400 uppercase">
-                                   <span>Batch Progress</span>
+                                   <span>{t('batchProgress')}</span>
                                    <span>{Math.round((line.currentProduct.actualOutput / line.currentProduct.targetOutput) * 100)}%</span>
                                 </div>
                                 <div className="w-full bg-gray-800 h-1 rounded-full overflow-hidden">
@@ -346,14 +347,14 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
            <div className="bg-[#0B1120] border-b border-yellow-400/50 p-4">
               <h3 className="font-bold text-white flex items-center gap-2">
                  <AlertTriangle size={18} className="text-yellow-400" />
-                 ISSUE TRACKER
+                 {t('issueTracker')}
               </h3>
-              <p className="text-xs text-gray-500 mt-1">{currentShop.name} // Active Tickets</p>
+              <p className="text-xs text-gray-500 mt-1">{currentShop.name} // {t('activeTickets')}</p>
            </div>
            
            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar max-h-[600px]">
               {currentShop.issues.length === 0 ? (
-                 <div className="text-center text-gray-600 py-10">No active issues.</div>
+                 <div className="text-center text-gray-600 py-10">{t('noIssues')}</div>
               ) : (
                  currentShop.issues.map(issue => (
                     <div key={issue.id} className="p-3 rounded-lg bg-[#111827] border border-white/10 hover:border-yellow-400/50 transition-all shadow-lg">
@@ -379,7 +380,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
            </div>
            
            <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors text-white">
-              + Report New Incident
+              {t('reportIncident')}
            </button>
         </div>
       </div>

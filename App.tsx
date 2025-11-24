@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   Activity, AlertCircle, Clock, CheckCircle2, 
-  RefreshCw, Smartphone, X, Zap, ChevronRight, Menu, Truck, ShieldAlert, Layers
+  RefreshCw, Smartphone, X, Zap, ChevronRight, Menu, Truck, ShieldAlert, Layers, Globe
 } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { KPIRing } from './components/KPIRing';
@@ -18,8 +18,9 @@ import { SupplierPanel } from './components/SupplierPanel';
 import { QualityDashboard } from './components/QualityDashboard';
 import { ProductionShopView } from './components/ProductionShopView';
 import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint } from './types';
+import { useLanguage } from './contexts/LanguageContext';
 
-// --- ENNOVI MOCK DATA SCENARIOS ---
+// --- ENNOVI MOCK DATA GENERATORS ---
 
 type Snapshot = {
   time: string;
@@ -32,10 +33,10 @@ type Snapshot = {
   qualityData: QualityData;
   workshops: WorkshopData[];
   actions: ActionItem[];
-  spcData: any[]; // Data for SPC Chart
+  spcData: any[];
 };
 
-// Mock Product Helper - NOW ACCEPTS OEE TO SYNC DATA
+// Mock Product Helper
 const getMockProduct = (type: string, id: string, targetOee?: number) => {
   const products = [
      { name: 'HV Connector Hsg', pn: 'EN-884-X', img: '' },
@@ -43,11 +44,8 @@ const getMockProduct = (type: string, id: string, targetOee?: number) => {
      { name: 'Sensor Terminal', pn: 'EN-SN-99', img: '' }
   ];
   const prod = products[Math.floor(Math.random() * products.length)];
-  
-  // SYNC LOGIC: If OEE is provided, use it for efficiency. Otherwise random.
   const efficiency = targetOee !== undefined ? targetOee : Math.floor(85 + Math.random() * 14);
   const targetOutput = 5000;
-  // Calculate actual output based on efficiency
   const actualOutput = Math.floor(targetOutput * (efficiency / 100));
 
   return {
@@ -60,12 +58,9 @@ const getMockProduct = (type: string, id: string, targetOee?: number) => {
   };
 };
 
-// Helper to generate extra dummy lines
 const generateExtraLines = (baseId: string, count: number, type: any, startIdx: number): ProductionLine[] => {
   return Array.from({ length: count }, (_, i) => {
-    // Generate OEE first
     const oee = Math.floor(85 + Math.random() * 14);
-    
     return {
       id: `${baseId}-${i + startIdx}`,
       name: `${type === 'stamping' ? 'Press' : type === 'molding' ? 'Mold' : 'Line'} ${String(i + startIdx).padStart(2, '0')}`,
@@ -77,7 +72,6 @@ const generateExtraLines = (baseId: string, count: number, type: any, startIdx: 
         { name: 'Power', value: 120, unit: 'kW', status: 'normal' },
         { name: 'Temp', value: 65, unit: 'C', status: 'normal' }
       ],
-      // Pass OEE to product to ensure sync
       currentProduct: getMockProduct(type, `${baseId}-${i}`, oee)
     };
   });
@@ -116,13 +110,11 @@ const QUALITY_MOCK: QualityData = {
   ]
 };
 
-// Common Complaints
 const COMPLAINTS_MOCK: Complaint[] = [
   { id: 'c1', customer: 'Tesla Global', type: 'Quality', description: 'Burr detected on Connector housing batch #4402', status: 'Investigating', department: 'QA', date: '2023-10-24' },
   { id: 'c2', customer: 'Bosch', type: 'Logistics', description: 'Shipment delayed by 3 days due to port congestion', status: 'Open', department: 'Logistics', date: '2023-10-25' },
 ];
 
-// Generate Workshop Data
 const WORKSHOPS_MOCK: WorkshopData[] = [
   {
     id: 'ws-stamping', name: 'Stamping Hall A', type: 'stamping', 
@@ -150,7 +142,6 @@ const WORKSHOPS_MOCK: WorkshopData[] = [
   }
 ];
 
-// Global Action Items Pool
 const ACTION_ITEMS_MOCK: ActionItem[] = [
   { id: '1', machineId: 'L1', title: 'Press 04 - Slug Jam', status: 'doing', strategy: 'Stop line, clear die, inspect strip. Resume @ 50% speed.', owner: 'Mike Chen', ownerAvatar: 'https://i.pravatar.cc/150?u=1', priority: 'high', timeAgo: '15m' },
   { id: '2', title: 'Resin Stock Low (DuPont)', status: 'todo', strategy: 'Expedite air freight from alternate supplier (SABIC).', owner: 'Sarah Wu', ownerAvatar: 'https://i.pravatar.cc/150?u=2', priority: 'high', timeAgo: '45m' },
@@ -160,17 +151,18 @@ const ACTION_ITEMS_MOCK: ActionItem[] = [
   { id: '6', machineId: 'MD-5', title: 'Mold 05 - Feed Jam', status: 'doing', strategy: 'Clear hopper bridge, reset feeder motor.', owner: 'John D.', ownerAvatar: '', priority: 'medium', timeAgo: '5m' },
 ];
 
-const DATA_SNAPSHOTS: Record<number, Snapshot> = {
+// --- DYNAMIC DATA GENERATION ---
+
+const getSnapshots = (t: any): Record<number, Snapshot> => ({
   0: { // 09:00 AM - START
     time: "09:00",
-    label: "Shift Start",
+    label: t('shiftStart'),
     kpis: [
       { id: 'oee', label: 'Plant OEE', value: 94, unit: '%', target: 88, status: 'normal', trend: 'up', responsible: '' },
       { id: 'otd', label: 'On Time Del.', value: 99, unit: '%', target: 98, status: 'normal', trend: 'flat', responsible: '' },
-      { id: 'ppm', label: 'Quality (PPM)', value: 12, unit: '', target: 50, status: 'normal', trend: 'down', responsible: '' },
+      { id: 'ppm', label: 'PPM', value: 12, unit: '', target: 50, status: 'normal', trend: 'down', responsible: '' },
       { id: 'cpk', label: 'Avg CpK', value: 1.67, unit: '', target: 1.33, status: 'normal', trend: 'up', responsible: '' },
     ],
-    // Force some issues even at start
     lines: [
       { id: 'L2', name: 'Press 02', processType: 'stamping', status: 'warning', issue: 'High Vibration', oee: 82, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('stamping', 'L2', 82) },
       ...WORKSHOPS_MOCK[0].lines.slice(0, 3) 
@@ -195,11 +187,11 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
   },
   1: { // 11:00 AM - WARNING
     time: "11:00",
-    label: "Resin Warning",
+    label: t('resinWarning'),
     kpis: [
       { id: 'oee', label: 'Plant OEE', value: 89, unit: '%', target: 88, status: 'warning', trend: 'down', responsible: '' },
       { id: 'otd', label: 'On Time Del.', value: 97, unit: '%', target: 98, status: 'warning', trend: 'down', responsible: '' },
-      { id: 'ppm', label: 'Quality (PPM)', value: 14, unit: '', target: 50, status: 'normal', trend: 'flat', responsible: '' },
+      { id: 'ppm', label: 'PPM', value: 14, unit: '', target: 50, status: 'normal', trend: 'flat', responsible: '' },
       { id: 'cpk', label: 'Avg CpK', value: 1.65, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
@@ -209,7 +201,7 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
-      { category: 'Resins', readiness: 45, fullMark: 100 }, // Warning
+      { category: 'Resins', readiness: 45, fullMark: 100 },
       { category: 'Gold Salts', readiness: 90, fullMark: 100 },
       { category: 'Pkg Trays', readiness: 90, fullMark: 100 },
       { category: 'Contacts', readiness: 95, fullMark: 100 },
@@ -227,11 +219,11 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
   },
   2: { // 14:00 PM - CRITICAL
     time: "14:00",
-    label: "Line Stop",
+    label: t('lineStop'),
     kpis: [
       { id: 'oee', label: 'Plant OEE', value: 72, unit: '%', target: 88, status: 'critical', trend: 'down', responsible: 'https://i.pravatar.cc/150?u=mgr1' },
       { id: 'otd', label: 'On Time Del.', value: 92, unit: '%', target: 98, status: 'warning', trend: 'down', responsible: '' },
-      { id: 'ppm', label: 'Quality (PPM)', value: 45, unit: '', target: 50, status: 'warning', trend: 'up', responsible: '' },
+      { id: 'ppm', label: 'PPM', value: 45, unit: '', target: 50, status: 'warning', trend: 'up', responsible: '' },
       { id: 'cpk', label: 'Avg CpK', value: 1.5, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
@@ -241,7 +233,7 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
-      { category: 'Resins', readiness: 20, fullMark: 100 }, // Critical Low
+      { category: 'Resins', readiness: 20, fullMark: 100 },
       { category: 'Gold Salts', readiness: 85, fullMark: 100 },
       { category: 'Pkg Trays', readiness: 80, fullMark: 100 },
       { category: 'Contacts', readiness: 95, fullMark: 100 },
@@ -253,7 +245,7 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     ],
     suppliers: [
        ...SUPPLIERS_DATA.slice(0, 1),
-       { id: 'S2', name: 'DuPont Polymers', riskLevel: 9, category: 'Resin (CN)' }, // Risk increase
+       { id: 'S2', name: 'DuPont Polymers', riskLevel: 9, category: 'Resin (CN)' },
        ...SUPPLIERS_DATA.slice(2),
     ],
     qualityData: QUALITY_MOCK,
@@ -261,19 +253,21 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     actions: ACTION_ITEMS_MOCK,
     spcData: [{time: '12:00', v: 1.55}, {time: '12:30', v: 1.52}, {time: '13:00', v: 1.50}, {time: '13:30', v: 1.48}, {time: '14:00', v: 1.52}]
   },
-};
+});
 
 export default function App() {
+  const { language, setLanguage, t } = useLanguage();
   const [activeView, setActiveView] = useState('cockpit');
   const [sliderValue, setSliderValue] = useState(0);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
   const [showMobile, setShowMobile] = useState(false);
   
-  const currentData = useMemo(() => DATA_SNAPSHOTS[sliderValue], [sliderValue]);
+  // UseMemo to regenerate data when language changes
+  const snapshots = useMemo(() => getSnapshots(t), [t]);
+  const currentData = snapshots[sliderValue];
   const activeLine = currentData.lines.find(l => l.id === selectedLineId);
 
-  // Auto-select problematic line at 14:00 (Scenario 2)
   useEffect(() => {
     if (sliderValue === 2) {
       setSelectedLineId('L1');
@@ -282,19 +276,14 @@ export default function App() {
     }
   }, [sliderValue]);
 
-  // PRODUCTION ALERT LOGIC: Filter to only show critical/warning lines
   const alertLines = useMemo(() => {
-    const problems = currentData.lines.filter(l => l.status !== 'normal');
-    // If no problems, returning empty array logic can be handled in render
-    return problems;
+    return currentData.lines.filter(l => l.status !== 'normal');
   }, [currentData.lines]);
 
-  // ACTION CENTER LOGIC: Filter based on selection
   const filteredActions = useMemo(() => {
     if (selectedLineId) {
       return currentData.actions.filter(a => a.machineId === selectedLineId);
     }
-    // If no specific line selected, show high priority generic items
     return currentData.actions.filter(a => !a.machineId || a.priority === 'high');
   }, [selectedLineId, currentData.actions]);
 
@@ -311,36 +300,47 @@ export default function App() {
         <header className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-40">
           <div>
              <h1 className="text-3xl font-black tracking-tighter text-yellow-400 flex items-center gap-2">
-               ENNOVI <span className="text-white/30 font-thin text-xl">|</span> HANGZHOU
+               {t('companyName')} <span className="text-white/30 font-thin text-xl">|</span> {t('hangzhouLoc')}
              </h1>
              <p className="text-[10px] text-gray-400 font-mono tracking-widest uppercase mt-1">
-               CONNECTED MOBILITY SOLUTIONS // GIGA-FACTORY
+               {t('subTitle')}
              </p>
           </div>
           
-          {/* Time Travel Slider */}
-          <div className="flex items-center gap-4 mt-4 md:mt-0 bg-white/5 px-6 py-2 rounded-full border border-white/10">
-            <Clock size={16} className="text-yellow-400" />
-            <div className="flex flex-col w-48 md:w-64">
-              <input 
-                type="range" 
-                min="0" 
-                max="2" 
-                step="1" 
-                value={sliderValue}
-                onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-400"
-              />
-              <div className="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
-                <span className={sliderValue === 0 ? 'text-white font-bold' : ''}>09:00</span>
-                <span className={sliderValue === 1 ? 'text-white font-bold' : ''}>11:00</span>
-                <span className={sliderValue === 2 ? 'text-white font-bold' : ''}>14:00</span>
+          <div className="flex items-center gap-6 mt-4 md:mt-0">
+            {/* Language Toggle */}
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-300 hover:text-white transition-all"
+            >
+              <Globe size={14} />
+              <span>{language === 'en' ? 'EN' : '中文'}</span>
+            </button>
+
+            {/* Time Travel Slider */}
+            <div className="flex items-center gap-4 bg-white/5 px-6 py-2 rounded-full border border-white/10">
+              <Clock size={16} className="text-yellow-400" />
+              <div className="flex flex-col w-48 md:w-64">
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="2" 
+                  step="1" 
+                  value={sliderValue}
+                  onChange={(e) => setSliderValue(parseInt(e.target.value))}
+                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-400"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
+                  <span className={sliderValue === 0 ? 'text-white font-bold' : ''}>09:00</span>
+                  <span className={sliderValue === 1 ? 'text-white font-bold' : ''}>11:00</span>
+                  <span className={sliderValue === 2 ? 'text-white font-bold' : ''}>14:00</span>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-mono font-bold">{currentData.time}</div>
-              <div className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded ${sliderValue === 2 ? 'bg-red-500 text-white' : sliderValue === 1 ? 'bg-orange-500 text-white' : 'bg-green-500 text-black'}`}>
-                {currentData.label}
+              <div className="text-right">
+                <div className="text-xl font-mono font-bold">{currentData.time}</div>
+                <div className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded ${sliderValue === 2 ? 'bg-red-500 text-white' : sliderValue === 1 ? 'bg-orange-500 text-white' : 'bg-green-500 text-black'}`}>
+                  {currentData.label}
+                </div>
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function App() {
               
               {/* Left Column: Resources (Input) */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-left duration-500 z-30">
-                <GlassCard title="Material Readiness" subTitle="WIP & RAW SUPPLY // 物料齐套率">
+                <GlassCard title={t('materialReadiness')} subTitle={t('materialSub')}>
                    <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={currentData.materials}>
@@ -378,7 +378,7 @@ export default function App() {
                    </div>
                 </GlassCard>
 
-                <GlassCard title="Supplier Health" subTitle="RISK MONITORING // 供应链风险" variant={sliderValue === 2 ? 'warning' : 'default'}>
+                <GlassCard title={t('supplierHealth')} subTitle={t('supplierSub')} variant={sliderValue === 2 ? 'warning' : 'default'}>
                   <SupplierPanel suppliers={currentData.suppliers} />
                 </GlassCard>
               </div>
@@ -398,10 +398,10 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Factory Map - ALERT MONITOR FILTERED */}
+                {/* Factory Map */}
                 <GlassCard 
-                  title="Production Alert Monitor" 
-                  subTitle="ANOMALY DETECTION // 生产异常监控" 
+                  title={t('productionAlert')}
+                  subTitle={t('productionAlertSub')}
                   className="flex-1 min-h-[400px] !overflow-visible" 
                   variant={currentData.kpis[0].status === 'critical' ? 'critical' : 'default'}
                 >
@@ -414,8 +414,8 @@ export default function App() {
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full opacity-50">
                        <CheckCircle2 size={64} className="text-green-500 mb-4 shadow-lg shadow-green-500/50 rounded-full" />
-                       <h3 className="text-xl font-bold text-green-400">All Systems Nominal</h3>
-                       <p className="text-sm text-gray-400">No active production alerts reported.</p>
+                       <h3 className="text-xl font-bold text-green-400">{t('allSystemsNominal')}</h3>
+                       <p className="text-sm text-gray-400">{t('noActiveAlerts')}</p>
                     </div>
                   )}
                 </GlassCard>
@@ -424,10 +424,10 @@ export default function App() {
               {/* Right Column: Process & Actions */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-right duration-500 z-30">
                  
-                 {/* Action Center - CONTEXT AWARE */}
+                 {/* Action Center */}
                  <GlassCard 
-                    title="Action Center" 
-                    subTitle={selectedLineId ? `STRATEGY FOR ${selectedLineId}` : "GLOBAL TASK FORCE // 任务中心"}
+                    title={t('actionCenter')}
+                    subTitle={selectedLineId ? `${t('strategyFor')} ${selectedLineId}` : t('taskForce')}
                     action={
                       <button 
                         onClick={() => setShowQR(!showQR)}
@@ -460,20 +460,20 @@ export default function App() {
                           </div>
                         </div>
                       )) : (
-                        <div className="text-center text-gray-500 py-4 text-xs">No specific actions required for current selection.</div>
+                        <div className="text-center text-gray-500 py-4 text-xs">{t('noActions')}</div>
                       )}
 
                       {/* Manual Assignment Override */}
                       {currentData.kpis[0].status === 'critical' && !selectedLineId && (
                          <div className="p-3 bg-red-900/10 border border-red-500/30 rounded text-center">
-                            <span className="text-xs text-red-400 animate-pulse">Select a red machine to view strategy</span>
+                            <span className="text-xs text-red-400 animate-pulse">{t('selectRedMachine')}</span>
                          </div>
                       )}
                     </div>
                  </GlassCard>
 
-                 {/* SPC Quick View - ADDED TIME AXIS */}
-                 <GlassCard title="SPC Monitor" subTitle="QUALITY CONTROL // 质量波动">
+                 {/* SPC Monitor */}
+                 <GlassCard title={t('spcMonitor')} subTitle={t('qualityControl')}>
                     <div className="h-32">
                        <ResponsiveContainer width="100%" height="100%">
                          <AreaChart data={currentData.spcData}>
@@ -513,12 +513,11 @@ export default function App() {
         {/* Global Bottom Ticker */}
         <div className="absolute bottom-0 left-0 w-full bg-[#0B1120] border-t border-white/10 h-8 flex items-center overflow-hidden z-30">
            <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-12 text-xs font-mono text-gray-500 px-4">
-              <span>SYSTEM STATUS: ONLINE</span>
-              <span>LAST SYNC: {currentData.time}:05</span>
-              <span className="text-yellow-400">ALERT: {currentData.label.toUpperCase()}</span>
-              <span>HANGZHOU SERVER: 24ms LATENCY</span>
-              <span>ERP CONNECTION: ACTIVE</span>
-              <span>WEATHER: 24°C RAIN</span>
+              <span>{t('systemStatus')}</span>
+              <span>{t('lastSync')}: {currentData.time}:05</span>
+              <span className="text-yellow-400">{t('alert')}: {currentData.label.toUpperCase()}</span>
+              <span>{t('serverLat')}</span>
+              <span>{t('erpConn')}</span>
            </div>
         </div>
 
@@ -535,59 +534,46 @@ export default function App() {
       {showQR && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
            <div className="bg-white p-6 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full text-black">
-              <h3 className="font-bold text-lg">Manager Access</h3>
-              <p className="text-sm text-center text-gray-600">Scan to open Mobile Command App</p>
+              <h3 className="font-bold text-lg">{t('managerAccess')}</h3>
+              <p className="text-sm text-center text-gray-600">{t('scanToOpen')}</p>
               <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-black">
                  <Smartphone size={64} className="text-black/20" />
                  {/* Fake QR pattern would go here */}
               </div>
               <button onClick={() => {setShowQR(false); setShowMobile(true);}} className="w-full py-3 bg-black text-white rounded-lg font-bold hover:bg-gray-800">
-                Simulate Scan
+                {t('simulateScan')}
               </button>
            </div>
         </div>
       )}
 
-      {/* 3. Mobile App Simulation (The "Human-in-the-loop" Demo) */}
+      {/* 3. Mobile App Simulation */}
       {showMobile && (
         <div className="fixed bottom-4 right-4 z-50 w-[300px] h-[600px] bg-white rounded-[40px] border-8 border-gray-900 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-500">
-           {/* Notch */}
            <div className="bg-gray-900 h-6 w-1/2 mx-auto rounded-b-xl mb-2"></div>
-           
            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto text-gray-800">
               <div className="flex justify-between items-center mb-6">
-                 <span className="font-bold text-lg">Task Assignment</span>
+                 <span className="font-bold text-lg">{t('taskAssign')}</span>
                  <X size={20} className="cursor-pointer" onClick={() => setShowMobile(false)} />
               </div>
-              
               <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-                 <div className="text-xs font-bold text-red-500 uppercase mb-1">Critical Alert</div>
+                 <div className="text-xs font-bold text-red-500 uppercase mb-1">{t('critAlert')}</div>
                  <h4 className="font-bold text-xl mb-1">Press 04 Stoppage</h4>
                  <p className="text-sm text-gray-500">OEE dropped to 45%. Slug monitor triggered.</p>
               </div>
-
               <div className="space-y-3">
-                 <label className="text-xs font-bold text-gray-400 uppercase">Assign To</label>
+                 <label className="text-xs font-bold text-gray-400 uppercase">{t('assignTo')}</label>
                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">M</div>
-                    <span className="text-sm font-medium">Maintenance Team A</span>
+                    <span className="text-sm font-medium">{t('mainTeamA')}</span>
                  </div>
-
-                 <label className="text-xs font-bold text-gray-400 uppercase">Priority</label>
-                 <div className="flex gap-2">
-                    <button className="flex-1 py-2 bg-red-100 text-red-600 rounded-lg text-xs font-bold border border-red-200">High</button>
-                    <button className="flex-1 py-2 bg-white text-gray-400 rounded-lg text-xs font-bold border border-gray-200">Med</button>
-                    <button className="flex-1 py-2 bg-white text-gray-400 rounded-lg text-xs font-bold border border-gray-200">Low</button>
-                 </div>
-
-                 <label className="text-xs font-bold text-gray-400 uppercase">Action Plan</label>
-                 <textarea className="w-full p-3 text-sm bg-white border border-gray-200 rounded-lg h-24" placeholder="Describe required action..."></textarea>
+                 <label className="text-xs font-bold text-gray-400 uppercase">{t('actionPlan')}</label>
+                 <textarea className="w-full p-3 text-sm bg-white border border-gray-200 rounded-lg h-24" placeholder={t('descAction')}></textarea>
               </div>
            </div>
-
            <div className="p-4 bg-white border-t border-gray-100">
-              <button onClick={() => setShowMobile(false)} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">
-                 Confirm Assignment
+              <button onClick={() => setShowMobile(false)} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30">
+                 {t('confirmAssign')}
               </button>
            </div>
         </div>

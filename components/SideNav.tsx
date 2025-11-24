@@ -1,5 +1,7 @@
+
 import React from 'react';
-import { LayoutDashboard, Factory, Users, BarChart3, Settings, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Factory, Users, BarChart3, Settings } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SideNavProps {
   activeView: string;
@@ -7,11 +9,13 @@ interface SideNavProps {
 }
 
 export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate }) => {
+  const { t } = useLanguage();
+
   const navItems = [
-    { id: 'cockpit', icon: LayoutDashboard, label: 'Command Center' },
-    { id: 'production', icon: Factory, label: 'Line Details' },
-    { id: 'customers', icon: Users, label: 'Customers & CRM' },
-    { id: 'quality', icon: BarChart3, label: 'Quality (SPC)' },
+    { id: 'cockpit', icon: LayoutDashboard, label: t('cockpit') },
+    { id: 'production', icon: Factory, label: t('production') },
+    { id: 'customers', icon: Users, label: t('customers') },
+    { id: 'quality', icon: BarChart3, label: t('quality') },
   ];
 
   return (
@@ -43,7 +47,7 @@ export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate }) => {
          </div>
          <button className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors">
             <Settings size={20} />
-            <span className="hidden lg:block text-sm">Settings</span>
+            <span className="hidden lg:block text-sm">{t('settings')}</span>
          </button>
       </div>
     </div>

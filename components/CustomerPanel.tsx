@@ -4,16 +4,15 @@ import { Customer } from '../types';
 import { GlassCard } from './GlassCard';
 import { Globe, Package, TrendingUp, AlertTriangle, BarChart as BarChartIcon, MessageSquareWarning, CheckCircle2, Clock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, ComposedChart, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid } from 'recharts';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CustomerPanelProps {
   customers: Customer[];
 }
 
 export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
-  // Aggregate S&OP data from the first customer for demo purposes
+  const { t } = useLanguage();
   const sopData = customers[0].sopData || [];
-  
-  // Flatten complaints from all customers
   const allComplaints = customers.flatMap(c => c.complaints || []);
 
   return (
@@ -21,8 +20,8 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
       
       {/* S&OP Module - Demand Management */}
       <GlassCard 
-        title="S&OP Demand Planning" 
-        subTitle="DEMAND VS CAPACITY // 产销协同"
+        title={t('sopTitle')} 
+        subTitle={t('sopSub')}
         className="w-full"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -64,7 +63,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <GlassCard title="Strategic Key Accounts (Tier 1)" className="min-h-[400px]">
+          <GlassCard title={t('keyAccounts')} className="min-h-[400px]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {customers.map((cust) => (
                 <div 
@@ -111,7 +110,7 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
           </GlassCard>
 
           {/* New Module: Key Customer Complaints */}
-          <GlassCard title="Key Customer Complaints (VOC)" subTitle="STATUS & RESOLUTION // 客户抱怨管理">
+          <GlassCard title={t('vocTitle')} subTitle={t('vocSub')}>
              <div className="overflow-x-auto">
                <table className="w-full text-left text-sm text-gray-400">
                  <thead className="bg-white/5 text-gray-200 text-xs uppercase font-mono">
@@ -151,38 +150,6 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
                    )}
                  </tbody>
                </table>
-             </div>
-          </GlassCard>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <GlassCard title="Global Delivery Volume" className="flex-1 min-h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={customers} layout="vertical" margin={{left: 20}}>
-                 <XAxis type="number" hide />
-                 <YAxis dataKey="name" type="category" width={80} tick={{fill: '#9ca3af', fontSize: 10}} />
-                 <Tooltip 
-                    contentStyle={{backgroundColor: '#111827', borderColor: '#374151', color: '#fff'}}
-                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                 />
-                 <Bar dataKey="ordersPending" radius={[0, 4, 4, 0]} barSize={20}>
-                    {customers.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.status === 'critical' ? '#ef4444' : '#facc15'} />
-                    ))}
-                 </Bar>
-               </BarChart>
-             </ResponsiveContainer>
-          </GlassCard>
-
-          <GlassCard className="p-4 bg-gradient-to-br from-yellow-400/20 to-transparent border-yellow-400/20">
-             <div className="flex items-center gap-4">
-               <div className="p-3 rounded-full bg-yellow-400/20 text-yellow-400">
-                 <Globe size={24} />
-               </div>
-               <div>
-                 <h4 className="font-bold text-white">Logistics Alert</h4>
-                 <p className="text-xs text-gray-300">Shanghai Port congestion affecting EU shipments. Rerouting via Ningbo.</p>
-               </div>
              </div>
           </GlassCard>
         </div>

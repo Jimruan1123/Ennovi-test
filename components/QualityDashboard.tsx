@@ -4,12 +4,15 @@ import { QualityData } from '../types';
 import { GlassCard } from './GlassCard';
 import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { ShieldAlert, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface QualityDashboardProps {
   data: QualityData;
 }
 
 export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-20">
       
@@ -17,28 +20,28 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <GlassCard className="flex items-center justify-between p-4">
            <div>
-             <span className="text-gray-400 text-xs uppercase">Plant FPY</span>
+             <span className="text-gray-400 text-xs uppercase">{t('plantFpy')}</span>
              <div className="text-3xl font-mono font-bold text-green-400">98.2%</div>
            </div>
            <Target className="text-green-500/50" size={32} />
         </GlassCard>
         <GlassCard className="flex items-center justify-between p-4">
            <div>
-             <span className="text-gray-400 text-xs uppercase">RMA Count</span>
+             <span className="text-gray-400 text-xs uppercase">{t('rmaCount')}</span>
              <div className="text-3xl font-mono font-bold text-yellow-400">3</div>
            </div>
            <ShieldAlert className="text-yellow-500/50" size={32} />
         </GlassCard>
         <GlassCard className="flex items-center justify-between p-4">
            <div>
-             <span className="text-gray-400 text-xs uppercase">COQP YTD</span>
+             <span className="text-gray-400 text-xs uppercase">{t('coqpYtd')}</span>
              <div className="text-3xl font-mono font-bold text-red-400">$42k</div>
            </div>
            <DollarSign className="text-red-500/50" size={32} />
         </GlassCard>
         <GlassCard className="flex items-center justify-between p-4">
            <div>
-             <span className="text-gray-400 text-xs uppercase">Goal Gap</span>
+             <span className="text-gray-400 text-xs uppercase">{t('goalGap')}</span>
              <div className="text-3xl font-mono font-bold text-blue-400">-0.4%</div>
            </div>
            <TrendingUp className="text-blue-500/50" size={32} />
@@ -48,7 +51,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Cost of Poor Quality (COQP) */}
-        <GlassCard title="COQP Breakdown" subTitle="FINANCIAL IMPACT // 质量成本">
+        <GlassCard title={t('coqpBreakdown')} subTitle={t('coqpSub')}>
            <div className="h-[300px] flex items-center">
               <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
@@ -80,7 +83,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
         </GlassCard>
 
         {/* FPY Trend */}
-        <GlassCard title="First Pass Yield (FPY) Trend" subTitle="7-DAY ROLLING // 直通率趋势">
+        <GlassCard title={t('fpyTrend')} subTitle={t('fpySub')}>
            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                  <AreaChart data={data.fpyTrend}>
@@ -102,7 +105,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
       </div>
 
       {/* Defect Pareto */}
-      <GlassCard title="Top Defects Analysis" subTitle="PARETO CHART // 缺陷排列图" className="min-h-[350px]">
+      <GlassCard title={t('topDefects')} subTitle={t('defectsSub')} className="min-h-[350px]">
          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
                <BarChart data={data.pareto}>
@@ -117,7 +120,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
          <div className="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded flex items-center gap-3">
             <ShieldAlert className="text-red-400" />
             <div className="text-sm text-gray-300">
-               <span className="font-bold text-red-400">Action Required:</span> "Plating Peeling" accounts for 42% of all defects this week. Check Bath B temp.
+               <span className="font-bold text-red-400">{t('actionRequired')}</span> {t('defectMsg')}
             </div>
          </div>
       </GlassCard>

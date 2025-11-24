@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { ProductionLine } from '../types';
 import { X, Activity, Thermometer, Gauge, Zap } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProcessDrillDownProps {
   line: ProductionLine;
@@ -9,6 +11,7 @@ interface ProcessDrillDownProps {
 }
 
 export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClose }) => {
+  const { t } = useLanguage();
   // Generate fake telemetry history
   const historyData = Array.from({ length: 20 }, (_, i) => ({
     time: i,
@@ -61,7 +64,7 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
             {/* OEE Big Card */}
             <div className="col-span-2 bg-gradient-to-r from-yellow-400/10 to-transparent p-4 rounded-xl border border-yellow-400/20 flex items-center justify-between">
                <div>
-                 <span className="text-xs text-yellow-400 font-bold uppercase">Real-time OEE</span>
+                 <span className="text-xs text-yellow-400 font-bold uppercase">{t('realtimeOee')}</span>
                  <div className="text-4xl font-black text-white mt-1">{line.oee}%</div>
                </div>
                <div className="h-16 w-32">
@@ -77,7 +80,7 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
           {/* Camera Feed / Digital Twin Placeholder */}
           <div className="bg-black relative rounded-xl overflow-hidden border border-white/20 min-h-[250px] flex flex-col">
              <div className="absolute top-3 left-3 z-10 flex gap-2">
-                <span className="bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded animate-pulse">LIVE FEED</span>
+                <span className="bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded animate-pulse">{t('liveFeed')}</span>
                 <span className="bg-black/50 text-white text-[9px] font-mono px-2 py-0.5 rounded">CAM-04</span>
              </div>
              
@@ -90,7 +93,7 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
                   </div>
                </div>
                <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur p-2 rounded text-xs font-mono text-green-400 border-l-2 border-green-500">
-                  SYSTEM STATUS: RUNNING AUTOMATION SEQUENCE 44B
+                  {t('systemSeq')}
                </div>
              </div>
           </div>
@@ -98,9 +101,9 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-white/10 bg-black/40 flex justify-end gap-3">
-          <button className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">View Logs</button>
+          <button className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">{t('viewLogs')}</button>
           <button className="px-6 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-sm rounded transition-colors shadow-lg shadow-yellow-400/20">
-            Request Maintenance
+            {t('reqMaint')}
           </button>
         </div>
       </div>
