@@ -197,7 +197,7 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
     lines: [
       { id: 'L1', name: 'Press 04', processType: 'stamping', status: 'warning', issue: 'Speed Reduced', oee: 75, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('stamping', 'L1', 75) },
       { id: 'MD-5', name: 'Mold 05', processType: 'molding', status: 'warning', issue: 'Hopper Feed', oee: 78, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('molding', 'MD-5', 78) },
-      ...WORKSHOPS_MOCK[0].lines.slice(1, 3)
+      ...WORKSHOPS_MOCK[0].lines.slice(1, 4)
     ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
@@ -227,9 +227,24 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
       { id: 'cpk', label: 'Avg CpK', value: 1.5, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
-      { id: 'L1', name: 'Press 04 (High-Speed)', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}], currentProduct: getMockProduct('stamping', 'L1', 45) },
+      // Primary Critical Group (5 items)
+      { id: 'L1', name: 'Press 04', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}], currentProduct: getMockProduct('stamping', 'L1', 45) },
       { id: 'PL-3', name: 'Plating 03', processType: 'plating', status: 'warning', issue: 'pH Level Drift', oee: 88, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-3', 88) },
-      ...WORKSHOPS_MOCK[0].lines.slice(1, 3)
+      { id: 'MD-2', name: 'Mold 02', processType: 'molding', status: 'warning', issue: 'Temp Drift', oee: 79, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('molding', 'MD-2', 79) },
+      { id: 'ST-5', name: 'Press 05', processType: 'stamping', status: 'warning', issue: 'Sensor Fault', oee: 81, cycleTime: 9, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-5', 81) },
+      { id: 'AS-1', name: 'Assembly 01', processType: 'assembly', status: 'critical', issue: 'Material Jam', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-1', 0) },
+      
+      // Secondary Group (4 items)
+      { id: 'ST-2', name: 'Press 02', processType: 'stamping', status: 'critical', issue: 'Die Crash', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-2', 0) },
+      { id: 'PL-1', name: 'Plating 01', processType: 'plating', status: 'warning', issue: 'Filter Clog', oee: 82, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-1', 82) },
+      { id: 'MD-8', name: 'Mold 08', processType: 'molding', status: 'warning', issue: 'Robot Fail', oee: 65, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-8', 65) },
+      { id: 'AS-4', name: 'Assembly 04', processType: 'assembly', status: 'warning', issue: 'Vision Reject', oee: 76, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-4', 76) },
+
+      // Third Group (4 items) - NEWLY ADDED
+      { id: 'PL-5', name: 'Plating 05', processType: 'plating', status: 'warning', issue: 'Rectifier Overheat', oee: 85, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-5', 85) },
+      { id: 'ST-9', name: 'Press 09', processType: 'stamping', status: 'critical', issue: 'Feeder Sync', oee: 20, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-9', 20) },
+      { id: 'MD-4', name: 'Mold 04', processType: 'molding', status: 'warning', issue: 'Hydraulic Leak', oee: 72, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-4', 72) },
+      { id: 'AS-3', name: 'Assembly 03', processType: 'assembly', status: 'warning', issue: 'Calibration', oee: 88, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-3', 88) }
     ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },

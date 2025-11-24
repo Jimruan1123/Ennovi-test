@@ -90,7 +90,7 @@ export const translations = {
     inventory: 'Inventory',
     people: 'People',
 
-    // New Additions
+    // New Additions for Modals & Footer
     digitalTwin: 'DIGITAL TWIN // LVL 1',
     northWing: 'NORTH WING ASSEMBLY',
     realtimeOee: 'Real-time OEE',
@@ -98,8 +98,6 @@ export const translations = {
     systemSeq: 'SYSTEM STATUS: RUNNING AUTOMATION SEQUENCE 44B',
     viewLogs: 'View Logs',
     reqMaint: 'Request Maintenance',
-    
-    // App Footer & Modals
     hangzhouLoc: 'HANGZHOU',
     serverLat: 'HANGZHOU SERVER: 24ms LATENCY',
     erpConn: 'ERP CONNECTION: ACTIVE',
@@ -112,7 +110,8 @@ export const translations = {
     mainTeamA: 'Maintenance Team A',
     actionPlan: 'Action Plan',
     descAction: 'Describe required action...',
-    confirmAssign: 'Confirm Assignment'
+    confirmAssign: 'Confirm Assignment',
+    detectedIssue: 'Detected Issue'
   },
   zh: {
     // Header
@@ -195,14 +194,14 @@ export const translations = {
     liveView: '实时画面',
     
     // SQDCIP
-    safety: 'Safety',
-    quality_sqdcip: 'Quality',
-    delivery: 'Delivery',
-    cost: 'Cost',
-    inventory: 'Inventory',
-    people: 'People',
+    safety: '安全 (Safety)',
+    quality_sqdcip: '质量 (Quality)',
+    delivery: '交付 (Delivery)',
+    cost: '成本 (Cost)',
+    inventory: '库存 (Inventory)',
+    people: '人员 (People)',
 
-    // New Additions
+    // New Additions for Modals & Footer
     digitalTwin: '数字孪生 // LVL 1',
     northWing: '北翼总装车间',
     realtimeOee: '实时 OEE',
@@ -210,20 +209,19 @@ export const translations = {
     systemSeq: '系统状态: 自动化序列 44B 运行中',
     viewLogs: '查看日志',
     reqMaint: '请求维护',
-    
-    // App Footer & Modals
     hangzhouLoc: '杭州',
-    serverLat: '杭州服务器: 延迟 24ms',
-    erpConn: 'ERP 连接: 活跃',
-    managerAccess: '管理者通道',
-    scanToOpen: '扫码开启移动端',
+    serverLat: '杭州服务器: 24ms 延迟',
+    erpConn: 'ERP 连接: 正常',
+    managerAccess: '管理者权限',
+    scanToOpen: '扫码打开移动指挥端',
     simulateScan: '模拟扫码',
     taskAssign: '任务指派',
-    critAlert: '紧急警报',
+    critAlert: '严重警报',
     assignTo: '指派给',
-    mainTeamA: '维修 A 队',
+    mainTeamA: '维修一队',
     actionPlan: '行动方案',
-    descAction: '描述所需措施...',
-    confirmAssign: '确认指派'
+    descAction: '描述所需行动...',
+    confirmAssign: '确认指派',
+    detectedIssue: '检测到异常'
   }
 };
