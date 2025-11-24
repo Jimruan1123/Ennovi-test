@@ -1,4 +1,5 @@
 
+
 export type Status = 'normal' | 'warning' | 'critical';
 
 export interface KPI {
@@ -54,6 +55,8 @@ export interface ActionItem {
   ownerAvatar: string;
   priority: 'high' | 'medium' | 'low';
   timeAgo: string;
+  machineId?: string; // Optional linkage to specific machine
+  strategy?: string; // Description of the fix strategy
 }
 
 export interface SupplierRisk {
@@ -71,6 +74,16 @@ export interface SOPData {
   gap: number;
 }
 
+export interface Complaint {
+  id: string;
+  customer: string;
+  type: string; // e.g., 'Logistics', 'Quality', 'Admin'
+  description: string;
+  status: 'Open' | 'Investigating' | 'Closed';
+  department: string; // e.g., 'QA', 'Sales', 'Logistics'
+  date: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -81,6 +94,7 @@ export interface Customer {
   ppm: number; // Parts Per Million defects
   lastShipment: string;
   sopData?: SOPData[]; // Sales & Operations Planning Data
+  complaints?: Complaint[];
 }
 
 export interface COQPData {

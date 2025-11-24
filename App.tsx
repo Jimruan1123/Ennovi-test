@@ -17,7 +17,7 @@ import { ProcessDrillDown } from './components/ProcessDrillDown';
 import { SupplierPanel } from './components/SupplierPanel';
 import { QualityDashboard } from './components/QualityDashboard';
 import { ProductionShopView } from './components/ProductionShopView';
-import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData } from './types';
+import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint } from './types';
 
 // --- ENNOVI MOCK DATA SCENARIOS ---
 
@@ -31,41 +31,56 @@ type Snapshot = {
   suppliers: SupplierRisk[];
   qualityData: QualityData;
   workshops: WorkshopData[];
+  actions: ActionItem[];
+  spcData: any[]; // Data for SPC Chart
 };
 
-// Mock Product Helper
-const getMockProduct = (type: string, id: string) => {
+// Mock Product Helper - NOW ACCEPTS OEE TO SYNC DATA
+const getMockProduct = (type: string, id: string, targetOee?: number) => {
   const products = [
-     { name: 'HV Connector Hsg', pn: 'EN-884-X', img: 'https://images.unsplash.com/photo-1593341646782-e0b495cffd32?auto=format&fit=crop&w=300&q=80' },
-     { name: 'Busbar Clip', pn: 'EN-BB-02', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=300&q=80' },
-     { name: 'Sensor Terminal', pn: 'EN-SN-99', img: 'https://images.unsplash.com/photo-1555664424-778a69022365?auto=format&fit=crop&w=300&q=80' }
+     { name: 'HV Connector Hsg', pn: 'EN-884-X', img: '' },
+     { name: 'Busbar Clip', pn: 'EN-BB-02', img: '' },
+     { name: 'Sensor Terminal', pn: 'EN-SN-99', img: '' }
   ];
   const prod = products[Math.floor(Math.random() * products.length)];
+  
+  // SYNC LOGIC: If OEE is provided, use it for efficiency. Otherwise random.
+  const efficiency = targetOee !== undefined ? targetOee : Math.floor(85 + Math.random() * 14);
+  const targetOutput = 5000;
+  // Calculate actual output based on efficiency
+  const actualOutput = Math.floor(targetOutput * (efficiency / 100));
+
   return {
     name: prod.name,
     partNumber: prod.pn,
-    image: prod.img,
-    targetOutput: 5000,
-    actualOutput: Math.floor(2000 + Math.random() * 2500),
-    efficiency: Math.floor(85 + Math.random() * 14)
+    image: prod.img, 
+    targetOutput: targetOutput,
+    actualOutput: actualOutput,
+    efficiency: efficiency
   };
 };
 
 // Helper to generate extra dummy lines
 const generateExtraLines = (baseId: string, count: number, type: any, startIdx: number): ProductionLine[] => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `${baseId}-${i + startIdx}`,
-    name: `${type === 'stamping' ? 'Press' : type === 'molding' ? 'Mold' : 'Line'} ${String(i + startIdx).padStart(2, '0')}`,
-    processType: type,
-    status: Math.random() > 0.9 ? 'warning' : 'normal',
-    oee: Math.floor(85 + Math.random() * 14),
-    cycleTime: 10,
-    telemetry: [
-      { name: 'Power', value: 120, unit: 'kW', status: 'normal' },
-      { name: 'Temp', value: 65, unit: 'C', status: 'normal' }
-    ],
-    currentProduct: getMockProduct(type, `${baseId}-${i}`)
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    // Generate OEE first
+    const oee = Math.floor(85 + Math.random() * 14);
+    
+    return {
+      id: `${baseId}-${i + startIdx}`,
+      name: `${type === 'stamping' ? 'Press' : type === 'molding' ? 'Mold' : 'Line'} ${String(i + startIdx).padStart(2, '0')}`,
+      processType: type,
+      status: Math.random() > 0.9 ? 'warning' : 'normal',
+      oee: oee,
+      cycleTime: 10,
+      telemetry: [
+        { name: 'Power', value: 120, unit: 'kW', status: 'normal' },
+        { name: 'Temp', value: 65, unit: 'C', status: 'normal' }
+      ],
+      // Pass OEE to product to ensure sync
+      currentProduct: getMockProduct(type, `${baseId}-${i}`, oee)
+    };
+  });
 };
 
 const SUPPLIERS_DATA: SupplierRisk[] = [
@@ -101,6 +116,12 @@ const QUALITY_MOCK: QualityData = {
   ]
 };
 
+// Common Complaints
+const COMPLAINTS_MOCK: Complaint[] = [
+  { id: 'c1', customer: 'Tesla Global', type: 'Quality', description: 'Burr detected on Connector housing batch #4402', status: 'Investigating', department: 'QA', date: '2023-10-24' },
+  { id: 'c2', customer: 'Bosch', type: 'Logistics', description: 'Shipment delayed by 3 days due to port congestion', status: 'Open', department: 'Logistics', date: '2023-10-25' },
+];
+
 // Generate Workshop Data
 const WORKSHOPS_MOCK: WorkshopData[] = [
   {
@@ -129,8 +150,18 @@ const WORKSHOPS_MOCK: WorkshopData[] = [
   }
 ];
 
+// Global Action Items Pool
+const ACTION_ITEMS_MOCK: ActionItem[] = [
+  { id: '1', machineId: 'L1', title: 'Press 04 - Slug Jam', status: 'doing', strategy: 'Stop line, clear die, inspect strip. Resume @ 50% speed.', owner: 'Mike Chen', ownerAvatar: 'https://i.pravatar.cc/150?u=1', priority: 'high', timeAgo: '15m' },
+  { id: '2', title: 'Resin Stock Low (DuPont)', status: 'todo', strategy: 'Expedite air freight from alternate supplier (SABIC).', owner: 'Sarah Wu', ownerAvatar: 'https://i.pravatar.cc/150?u=2', priority: 'high', timeAgo: '45m' },
+  { id: '3', machineId: 'PL-3', title: 'Plating Bath B Maintenance', status: 'done', strategy: 'Routine filter change and chemical top-up.', owner: 'Dave L.', ownerAvatar: 'https://i.pravatar.cc/150?u=3', priority: 'medium', timeAgo: '2h' },
+  { id: '4', title: 'Weekly Safety Audit', status: 'todo', strategy: 'Walkthrough of Stamping Hall B.', owner: 'EHS Team', ownerAvatar: '', priority: 'medium', timeAgo: '4h' },
+  { id: '5', machineId: 'L2', title: 'Press 02 - Vibration', status: 'todo', strategy: 'Check flywheel balance and floor mounting bolts.', owner: 'Maint. Team', ownerAvatar: '', priority: 'medium', timeAgo: '10m' },
+  { id: '6', machineId: 'MD-5', title: 'Mold 05 - Feed Jam', status: 'doing', strategy: 'Clear hopper bridge, reset feeder motor.', owner: 'John D.', ownerAvatar: '', priority: 'medium', timeAgo: '5m' },
+];
+
 const DATA_SNAPSHOTS: Record<number, Snapshot> = {
-  0: { // 09:00 AM - NORMAL
+  0: { // 09:00 AM - START
     time: "09:00",
     label: "Shift Start",
     kpis: [
@@ -139,7 +170,11 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
       { id: 'ppm', label: 'Quality (PPM)', value: 12, unit: '', target: 50, status: 'normal', trend: 'down', responsible: '' },
       { id: 'cpk', label: 'Avg CpK', value: 1.67, unit: '', target: 1.33, status: 'normal', trend: 'up', responsible: '' },
     ],
-    lines: WORKSHOPS_MOCK[0].lines.slice(0, 4), // Just for main dashboard view
+    // Force some issues even at start
+    lines: [
+      { id: 'L2', name: 'Press 02', processType: 'stamping', status: 'warning', issue: 'High Vibration', oee: 82, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('stamping', 'L2', 82) },
+      ...WORKSHOPS_MOCK[0].lines.slice(0, 3) 
+    ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
       { category: 'Resins', readiness: 100, fullMark: 100 },
@@ -150,11 +185,13 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     customers: [
       { id: 'C1', name: 'Tesla Global', region: 'NA/EU', segment: 'EV Power', status: 'normal', ordersPending: 45000, ppm: 5, lastShipment: '2h ago', sopData: SOP_MOCK },
       { id: 'C2', name: 'CATL', region: 'APAC', segment: 'Battery', status: 'normal', ordersPending: 120000, ppm: 0, lastShipment: '30m ago', sopData: SOP_MOCK },
-      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK },
+      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK, complaints: COMPLAINTS_MOCK },
     ],
     suppliers: SUPPLIERS_DATA,
     qualityData: QUALITY_MOCK,
-    workshops: WORKSHOPS_MOCK
+    workshops: WORKSHOPS_MOCK,
+    actions: ACTION_ITEMS_MOCK,
+    spcData: [{time: '08:00', v: 1.66}, {time: '08:15', v: 1.67}, {time: '08:30', v: 1.68}, {time: '08:45', v: 1.65}, {time: '09:00', v: 1.67}]
   },
   1: { // 11:00 AM - WARNING
     time: "11:00",
@@ -165,7 +202,11 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
       { id: 'ppm', label: 'Quality (PPM)', value: 14, unit: '', target: 50, status: 'normal', trend: 'flat', responsible: '' },
       { id: 'cpk', label: 'Avg CpK', value: 1.65, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
-    lines: WORKSHOPS_MOCK[0].lines.slice(0, 4),
+    lines: [
+      { id: 'L1', name: 'Press 04', processType: 'stamping', status: 'warning', issue: 'Speed Reduced', oee: 75, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('stamping', 'L1', 75) },
+      { id: 'MD-5', name: 'Mold 05', processType: 'molding', status: 'warning', issue: 'Hopper Feed', oee: 78, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('molding', 'MD-5', 78) },
+      ...WORKSHOPS_MOCK[0].lines.slice(1, 3)
+    ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
       { category: 'Resins', readiness: 45, fullMark: 100 }, // Warning
@@ -176,11 +217,13 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
     customers: [
       { id: 'C1', name: 'Tesla Global', region: 'NA/EU', segment: 'EV Power', status: 'normal', ordersPending: 44500, ppm: 5, lastShipment: '4h ago', sopData: SOP_MOCK },
       { id: 'C2', name: 'CATL', region: 'APAC', segment: 'Battery', status: 'warning', ordersPending: 125000, ppm: 0, lastShipment: '2h ago', sopData: SOP_MOCK }, 
-      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK },
+      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK, complaints: COMPLAINTS_MOCK },
     ],
     suppliers: SUPPLIERS_DATA,
     qualityData: QUALITY_MOCK,
-    workshops: WORKSHOPS_MOCK
+    workshops: WORKSHOPS_MOCK,
+    actions: ACTION_ITEMS_MOCK,
+    spcData: [{time: '09:00', v: 1.67}, {time: '09:30', v: 1.65}, {time: '10:00', v: 1.62}, {time: '10:30', v: 1.58}, {time: '11:00', v: 1.55}]
   },
   2: { // 14:00 PM - CRITICAL
     time: "14:00",
@@ -192,8 +235,9 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
       { id: 'cpk', label: 'Avg CpK', value: 1.5, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
-      { id: 'L1', name: 'Press 04 (High-Speed)', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}] },
-      ...WORKSHOPS_MOCK[0].lines.slice(1, 4)
+      { id: 'L1', name: 'Press 04 (High-Speed)', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}], currentProduct: getMockProduct('stamping', 'L1', 45) },
+      { id: 'PL-3', name: 'Plating 03', processType: 'plating', status: 'warning', issue: 'pH Level Drift', oee: 88, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-3', 88) },
+      ...WORKSHOPS_MOCK[0].lines.slice(1, 3)
     ],
     materials: [
       { category: 'Cu Alloys', readiness: 100, fullMark: 100 },
@@ -203,9 +247,9 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
       { category: 'Contacts', readiness: 95, fullMark: 100 },
     ],
     customers: [
-      { id: 'C1', name: 'Tesla Global', region: 'NA/EU', segment: 'EV Power', status: 'warning', ordersPending: 44000, ppm: 5, lastShipment: '6h ago', sopData: SOP_MOCK },
+      { id: 'C1', name: 'Tesla Global', region: 'NA/EU', segment: 'EV Power', status: 'warning', ordersPending: 44000, ppm: 5, lastShipment: '6h ago', sopData: SOP_MOCK, complaints: [...COMPLAINTS_MOCK, { id: 'c3', customer: 'Tesla', type: 'Quality', description: 'Urgent: Line stop at Tesla Berlin due to Connector fitment issue', status: 'Open', department: 'Eng', date: 'Today' }] },
       { id: 'C2', name: 'CATL', region: 'APAC', segment: 'Battery', status: 'critical', ordersPending: 130000, ppm: 0, lastShipment: '4h ago', sopData: SOP_MOCK }, 
-      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK },
+      { id: 'C3', name: 'Bosch', region: 'EU', segment: 'Signal', status: 'normal', ordersPending: 8500, ppm: 15, lastShipment: '1d ago', sopData: SOP_MOCK, complaints: COMPLAINTS_MOCK },
     ],
     suppliers: [
        ...SUPPLIERS_DATA.slice(0, 1),
@@ -213,15 +257,11 @@ const DATA_SNAPSHOTS: Record<number, Snapshot> = {
        ...SUPPLIERS_DATA.slice(2),
     ],
     qualityData: QUALITY_MOCK,
-    workshops: WORKSHOPS_MOCK
+    workshops: WORKSHOPS_MOCK,
+    actions: ACTION_ITEMS_MOCK,
+    spcData: [{time: '12:00', v: 1.55}, {time: '12:30', v: 1.52}, {time: '13:00', v: 1.50}, {time: '13:30', v: 1.48}, {time: '14:00', v: 1.52}]
   },
 };
-
-const ACTION_ITEMS: ActionItem[] = [
-  { id: '1', title: 'Press 04 - Slug Jam', status: 'doing', owner: 'Mike Chen', ownerAvatar: 'https://i.pravatar.cc/150?u=1', priority: 'high', timeAgo: '15m' },
-  { id: '2', title: 'Resin Stock Low (DuPont)', status: 'todo', owner: 'Sarah Wu', ownerAvatar: 'https://i.pravatar.cc/150?u=2', priority: 'high', timeAgo: '45m' },
-  { id: '3', title: 'Plating Bath B Maintenance', status: 'done', owner: 'Dave L.', ownerAvatar: 'https://i.pravatar.cc/150?u=3', priority: 'medium', timeAgo: '2h' },
-];
 
 export default function App() {
   const [activeView, setActiveView] = useState('cockpit');
@@ -241,6 +281,22 @@ export default function App() {
       setSelectedLineId(null);
     }
   }, [sliderValue]);
+
+  // PRODUCTION ALERT LOGIC: Filter to only show critical/warning lines
+  const alertLines = useMemo(() => {
+    const problems = currentData.lines.filter(l => l.status !== 'normal');
+    // If no problems, returning empty array logic can be handled in render
+    return problems;
+  }, [currentData.lines]);
+
+  // ACTION CENTER LOGIC: Filter based on selection
+  const filteredActions = useMemo(() => {
+    if (selectedLineId) {
+      return currentData.actions.filter(a => a.machineId === selectedLineId);
+    }
+    // If no specific line selected, show high priority generic items
+    return currentData.actions.filter(a => !a.machineId || a.priority === 'high');
+  }, [selectedLineId, currentData.actions]);
 
   return (
     <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden">
@@ -298,7 +354,7 @@ export default function App() {
             <div className="grid grid-cols-12 gap-6 pb-20">
               
               {/* Left Column: Resources (Input) */}
-              <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-left duration-500">
+              <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-left duration-500 z-30">
                 <GlassCard title="Material Readiness" subTitle="WIP & RAW SUPPLY // 物料齐套率">
                    <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -328,7 +384,7 @@ export default function App() {
               </div>
 
               {/* Middle Column: Results (KPIs) */}
-              <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
+              <div className="col-span-12 lg:col-span-6 flex flex-col gap-6 z-20">
                 
                 {/* Executive KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -342,28 +398,36 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Factory Map */}
+                {/* Factory Map - ALERT MONITOR FILTERED */}
                 <GlassCard 
-                  title="Production Floor" 
-                  subTitle="LIVE DIGITAL TWIN // 实时车间" 
-                  className="flex-1 min-h-[400px]"
+                  title="Production Alert Monitor" 
+                  subTitle="ANOMALY DETECTION // 生产异常监控" 
+                  className="flex-1 min-h-[400px] !overflow-visible" 
                   variant={currentData.kpis[0].status === 'critical' ? 'critical' : 'default'}
                 >
-                  <FactoryMap 
-                    lines={currentData.lines} 
-                    onLineClick={setSelectedLineId}
-                    activeLineId={selectedLineId}
-                  />
+                  {alertLines.length > 0 ? (
+                    <FactoryMap 
+                      lines={alertLines} 
+                      onLineClick={setSelectedLineId}
+                      activeLineId={selectedLineId}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full opacity-50">
+                       <CheckCircle2 size={64} className="text-green-500 mb-4 shadow-lg shadow-green-500/50 rounded-full" />
+                       <h3 className="text-xl font-bold text-green-400">All Systems Nominal</h3>
+                       <p className="text-sm text-gray-400">No active production alerts reported.</p>
+                    </div>
+                  )}
                 </GlassCard>
               </div>
 
               {/* Right Column: Process & Actions */}
-              <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-right duration-500">
+              <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-right duration-500 z-30">
                  
-                 {/* Action Center */}
+                 {/* Action Center - CONTEXT AWARE */}
                  <GlassCard 
                     title="Action Center" 
-                    subTitle="TASK FORCE // 任务中心"
+                    subTitle={selectedLineId ? `STRATEGY FOR ${selectedLineId}` : "GLOBAL TASK FORCE // 任务中心"}
                     action={
                       <button 
                         onClick={() => setShowQR(!showQR)}
@@ -374,9 +438,9 @@ export default function App() {
                     }
                   >
                     <div className="flex flex-col gap-3">
-                      {ACTION_ITEMS.map(item => (
+                      {filteredActions.length > 0 ? filteredActions.map(item => (
                         <div key={item.id} className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:border-yellow-400/30 transition-all group">
-                          <img src={item.ownerAvatar} alt="" className="w-8 h-8 rounded-full border border-gray-600 grayscale group-hover:grayscale-0" />
+                          <img src={item.ownerAvatar || "https://i.pravatar.cc/150"} alt="" className="w-8 h-8 rounded-full border border-gray-600 grayscale group-hover:grayscale-0" />
                           <div className="flex-1">
                              <div className="flex justify-between items-start">
                                <span className="text-sm font-bold text-gray-200">{item.title}</span>
@@ -384,38 +448,39 @@ export default function App() {
                                  {item.status.toUpperCase()}
                                </span>
                              </div>
-                             <div className="flex justify-between mt-1">
+                             {item.strategy && (
+                               <div className="text-xs text-yellow-400/80 mt-1 italic border-l-2 border-yellow-400/30 pl-2">
+                                 "{item.strategy}"
+                               </div>
+                             )}
+                             <div className="flex justify-between mt-2 pt-2 border-t border-white/5">
                                <span className="text-xs text-gray-500">{item.owner}</span>
                                <span className="text-[10px] text-gray-600">{item.timeAgo}</span>
                              </div>
                           </div>
                         </div>
-                      ))}
-                      {currentData.kpis[0].status === 'critical' && (
-                        <div className="p-3 rounded-lg border border-red-500/50 bg-red-500/10 animate-pulse">
-                           <div className="text-red-400 font-bold text-sm flex items-center gap-2">
-                             <AlertCircle size={14} /> NEW CRITICAL ALERT
-                           </div>
-                           <div className="text-xs text-red-300 mt-1">
-                             OEE dropped below threshold. Immediate response required for Press 04.
-                           </div>
-                           <button onClick={() => setShowMobile(true)} className="mt-2 w-full py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded border border-red-500/30">
-                             Assign Task via Mobile
-                           </button>
-                        </div>
+                      )) : (
+                        <div className="text-center text-gray-500 py-4 text-xs">No specific actions required for current selection.</div>
+                      )}
+
+                      {/* Manual Assignment Override */}
+                      {currentData.kpis[0].status === 'critical' && !selectedLineId && (
+                         <div className="p-3 bg-red-900/10 border border-red-500/30 rounded text-center">
+                            <span className="text-xs text-red-400 animate-pulse">Select a red machine to view strategy</span>
+                         </div>
                       )}
                     </div>
                  </GlassCard>
 
-                 {/* SPC Quick View */}
+                 {/* SPC Quick View - ADDED TIME AXIS */}
                  <GlassCard title="SPC Monitor" subTitle="QUALITY CONTROL // 质量波动">
                     <div className="h-32">
                        <ResponsiveContainer width="100%" height="100%">
-                         <AreaChart data={[
-                           {v: 1.6}, {v: 1.65}, {v: 1.62}, {v: 1.58}, {v: 1.5}, {v: 1.48}, {v: 1.52}
-                         ]}>
+                         <AreaChart data={currentData.spcData}>
                            <Area type="monotone" dataKey="v" stroke="#facc15" fill="#facc15" fillOpacity={0.1} />
+                           <XAxis dataKey="time" tick={{fontSize: 9, fill: '#666'}} interval={1} />
                            <YAxis hide domain={[1.3, 1.8]} />
+                           <Tooltip contentStyle={{backgroundColor: '#111827', fontSize: '10px'}} />
                          </AreaChart>
                        </ResponsiveContainer>
                     </div>

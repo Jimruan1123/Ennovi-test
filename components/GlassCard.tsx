@@ -3,7 +3,7 @@ import React from 'react';
 interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
-  title?: React.ReactNode; // Changed to ReactNode to allow complex title structures
+  title?: React.ReactNode; 
   subTitle?: string;
   action?: React.ReactNode;
   variant?: 'default' | 'critical' | 'active' | 'warning';
@@ -26,10 +26,14 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     }
   };
 
+  // Logic: strictly remove 'overflow-hidden' if the class requests overflow-visible
+  const allowOverflow = className.includes('overflow-visible');
+  const overflowClass = allowOverflow ? 'overflow-visible' : 'overflow-hidden';
+
   return (
-    <div className={`glass-panel relative flex flex-col rounded-xl overflow-hidden transition-all duration-500 ${getBorderColor()} ${className}`}>
+    <div className={`glass-panel relative flex flex-col rounded-xl transition-all duration-500 ${getBorderColor()} ${overflowClass} ${className}`}>
       {/* Decorative top sheen */}
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50 pointer-events-none" />
       
       {(title || action) && (
         <div className="flex justify-between items-center px-5 py-4 border-b border-white/5 bg-black/20 shrink-0">
@@ -48,7 +52,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className="flex-1 p-5 overflow-hidden relative">
+      <div className={`flex-1 p-5 relative ${allowOverflow ? 'overflow-visible' : 'overflow-hidden'}`}>
         {children}
       </div>
     </div>

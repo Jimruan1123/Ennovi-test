@@ -2,7 +2,7 @@
 import React from 'react';
 import { Customer } from '../types';
 import { GlassCard } from './GlassCard';
-import { Globe, Package, TrendingUp, AlertTriangle, BarChart as BarChartIcon } from 'lucide-react';
+import { Globe, Package, TrendingUp, AlertTriangle, BarChart as BarChartIcon, MessageSquareWarning, CheckCircle2, Clock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, ComposedChart, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid } from 'recharts';
 
 interface CustomerPanelProps {
@@ -12,9 +12,12 @@ interface CustomerPanelProps {
 export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
   // Aggregate S&OP data from the first customer for demo purposes
   const sopData = customers[0].sopData || [];
+  
+  // Flatten complaints from all customers
+  const allComplaints = customers.flatMap(c => c.complaints || []);
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-20">
       
       {/* S&OP Module - Demand Management */}
       <GlassCard 
@@ -105,6 +108,50 @@ export const CustomerPanel: React.FC<CustomerPanelProps> = ({ customers }) => {
                 </div>
               ))}
             </div>
+          </GlassCard>
+
+          {/* New Module: Key Customer Complaints */}
+          <GlassCard title="Key Customer Complaints (VOC)" subTitle="STATUS & RESOLUTION // 客户抱怨管理">
+             <div className="overflow-x-auto">
+               <table className="w-full text-left text-sm text-gray-400">
+                 <thead className="bg-white/5 text-gray-200 text-xs uppercase font-mono">
+                   <tr>
+                     <th className="p-3">Status</th>
+                     <th className="p-3">Customer</th>
+                     <th className="p-3">Type</th>
+                     <th className="p-3">Issue Description</th>
+                     <th className="p-3">Dept</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-white/5">
+                   {allComplaints.length > 0 ? allComplaints.map(comp => (
+                     <tr key={comp.id} className="hover:bg-white/5 transition-colors">
+                       <td className="p-3">
+                         <span className={`flex items-center gap-2 text-xs font-bold px-2 py-1 rounded w-fit ${
+                           comp.status === 'Open' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                           comp.status === 'Investigating' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                           'bg-green-500/20 text-green-400 border border-green-500/30'
+                         }`}>
+                           {comp.status === 'Open' ? <AlertTriangle size={12}/> : 
+                            comp.status === 'Investigating' ? <Clock size={12}/> : <CheckCircle2 size={12}/>}
+                           {comp.status.toUpperCase()}
+                         </span>
+                       </td>
+                       <td className="p-3 font-bold text-white">{comp.customer}</td>
+                       <td className="p-3 font-mono text-xs">{comp.type}</td>
+                       <td className="p-3 text-white max-w-xs truncate" title={comp.description}>{comp.description}</td>
+                       <td className="p-3">
+                         <span className="px-2 py-1 bg-gray-700 rounded text-[10px] text-white font-mono">{comp.department}</span>
+                       </td>
+                     </tr>
+                   )) : (
+                     <tr>
+                       <td colSpan={5} className="p-6 text-center text-gray-500 italic">No active complaints logged.</td>
+                     </tr>
+                   )}
+                 </tbody>
+               </table>
+             </div>
           </GlassCard>
         </div>
 
