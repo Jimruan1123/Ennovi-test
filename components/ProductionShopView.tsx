@@ -10,8 +10,31 @@ interface ProductionShopViewProps {
 }
 
 // 1. Technical Wireframes for Product Visualization (CAD Style)
-// UPGRADED: High-Fidelity 2.5D Isometric View (No Animation)
+// UPGRADED: High-Fidelity 2.5D Isometric View (No Animation) with AI Asset Support
 const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
+  // CHECK FOR GLOBAL PRODUCT ASSET
+  const [aiAsset, setAiAsset] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadAsset = () => {
+      const cached = localStorage.getItem(`global_product_auto_v2_${type}`);
+      setAiAsset(cached);
+    };
+    loadAsset();
+    window.addEventListener('assetUpdated', loadAsset);
+    return () => window.removeEventListener('assetUpdated', loadAsset);
+  }, [type]);
+
+  // If AI Asset exists, render image instead of SVG
+  if (aiAsset) {
+    return (
+      <div className="w-full h-full bg-[#0B1120] relative overflow-hidden flex items-center justify-center">
+         <div className="absolute inset-0" style={{backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
+         <img src={aiAsset} alt={type} className="w-[80%] h-[80%] object-contain relative z-10 drop-shadow-2xl animate-in fade-in zoom-in-95 duration-500" />
+         <div className="absolute top-1 right-1 px-1 py-0.5 bg-purple-500/30 border border-purple-500/50 rounded text-[8px] text-purple-200 font-bold backdrop-blur-sm">AI TWIN</div>
+      </div>
+    );
+  }
   
   // Material Color Palettes (Top / Left / Right Faces for Isometric 3D)
   const PLASTIC_TOP = "#60a5fa"; 

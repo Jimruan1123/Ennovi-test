@@ -20,6 +20,111 @@ import { ProductionShopView } from './components/ProductionShopView';
 import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 
+// --- ASSET DAEMON: BACKGROUND AI GENERATOR ---
+// This component runs invisibly to pre-generate assets
+const AssetDaemon = () => {
+  useEffect(() => {
+    const generateAssets = async () => {
+      // Define the critical products to pre-generate
+      const products = [
+        { 
+          name: 'HV Connector Hsg', 
+          type: 'connector',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of an Automotive High-Voltage (HV) Connector Housing. Features: Distinctive Orange and Black safety plastic, complex locking mechanism, multi-pin interface. Style: Industrial technical art, sharp details, soft studio lighting. Background: Solid dark color #0B1120 (Matches app background).' 
+        },
+        { 
+          name: 'Busbar Clip', 
+          type: 'busbar',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of an EV Battery Copper Busbar. Features: Thick bent copper metal, shiny metallic texture, partial orange insulation coating. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
+        },
+        { 
+          name: 'Sensor Terminal', 
+          type: 'terminal',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of a Precision Automotive Sensor Terminal. Features: Silver or Gold plated metal, stamped metal leadframe, macro view, complex bent geometry. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
+        }
+      ];
+
+      let hasUpdates = false;
+
+      // Helper to safely get API key
+      let apiKey = '';
+      try {
+        // @ts-ignore
+        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+           // @ts-ignore
+           apiKey = process.env.API_KEY;
+        }
+      } catch (e) {}
+
+      if (!apiKey) return;
+
+      // Lazy load AI SDK
+      let GoogleGenAI;
+      try {
+        const module = await import("@google/genai");
+        GoogleGenAI = module.GoogleGenAI;
+      } catch (e) {
+        console.warn("AI SDK not loaded");
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      for (const prod of products) {
+        const key = `global_product_auto_v2_${prod.name}`; // V2 forces regeneration of old images
+        if (!localStorage.getItem(key)) {
+          console.log(`Daemon: Generating ${prod.name}...`);
+          try {
+             const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: { parts: [{ text: prod.prompt }] },
+                config: { imageConfig: { aspectRatio: "1:1" } }
+             });
+
+             const parts = response?.candidates?.[0]?.content?.parts;
+             if (parts) {
+                for (const part of parts) {
+                   if (part.inlineData && part.inlineData.data) {
+                      // Simple compression (resize to 300px for icons)
+                      const img = new Image();
+                      img.src = `data:image/png;base64,${part.inlineData.data}`;
+                      await new Promise((resolve) => {
+                         img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = 300;
+                            canvas.height = 300;
+                            ctx?.drawImage(img, 0, 0, 300, 300);
+                            const optimized = canvas.toDataURL('image/jpeg', 0.8);
+                            localStorage.setItem(key, optimized);
+                            hasUpdates = true;
+                            resolve(true);
+                         };
+                      });
+                   }
+                }
+             }
+          } catch (err) {
+             console.error(`Failed to gen ${prod.name}`, err);
+          }
+        }
+      }
+
+      if (hasUpdates) {
+        window.dispatchEvent(new Event('assetUpdated'));
+        console.log("Daemon: Assets updated and synced.");
+      }
+    };
+
+    // Run 1 second after mount
+    const timer = setTimeout(generateAssets, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return null; // Invisible
+};
+
+
 // --- ENNOVI MOCK DATA GENERATORS ---
 
 type Snapshot = {
@@ -43,7 +148,10 @@ const getMockProduct = (type: string, id: string, targetOee?: number) => {
      { name: 'Busbar Clip', pn: 'EN-BB-02', img: '' },
      { name: 'Sensor Terminal', pn: 'EN-SN-99', img: '' }
   ];
-  const prod = products[Math.floor(Math.random() * products.length)];
+  // Consistent random choice based on ID to avoid flickering
+  const index = id.charCodeAt(id.length - 1) % products.length;
+  const prod = products[index];
+  
   const efficiency = targetOee !== undefined ? targetOee : Math.floor(85 + Math.random() * 14);
   const targetOutput = 5000;
   const actualOutput = Math.floor(targetOutput * (efficiency / 100));
@@ -61,8 +169,9 @@ const getMockProduct = (type: string, id: string, targetOee?: number) => {
 const generateExtraLines = (baseId: string, count: number, type: any, startIdx: number): ProductionLine[] => {
   return Array.from({ length: count }, (_, i) => {
     const oee = Math.floor(85 + Math.random() * 14);
+    const lineId = `${baseId}-${i + startIdx}`;
     return {
-      id: `${baseId}-${i + startIdx}`,
+      id: lineId,
       name: `${type === 'stamping' ? 'Press' : type === 'molding' ? 'Mold' : 'Line'} ${String(i + startIdx).padStart(2, '0')}`,
       processType: type,
       status: Math.random() > 0.9 ? 'warning' : 'normal',
@@ -72,7 +181,7 @@ const generateExtraLines = (baseId: string, count: number, type: any, startIdx: 
         { name: 'Power', value: 120, unit: 'kW', status: 'normal' },
         { name: 'Temp', value: 65, unit: 'C', status: 'normal' }
       ],
-      currentProduct: getMockProduct(type, `${baseId}-${i}`, oee)
+      currentProduct: getMockProduct(type, lineId, oee)
     };
   });
 };
@@ -305,6 +414,9 @@ export default function App() {
   return (
     <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden">
       
+      {/* INVISIBLE ASSET GENERATOR */}
+      <AssetDaemon />
+
       {/* Sidebar */}
       <SideNav activeView={activeView} onNavigate={setActiveView} />
 

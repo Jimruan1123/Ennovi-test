@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProductionLine } from '../types';
-import { X, Activity, Thermometer, Gauge, RefreshCw, AlertTriangle, FileText, Image as ImageIcon, Save } from 'lucide-react';
+import { X, Activity, Thermometer, Gauge, RefreshCw, AlertTriangle, FileText, Image as ImageIcon, Save, Package, Zap } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../contexts/LanguageContext';
 // Dynamic import is used below to prevent load crashes
@@ -116,6 +116,7 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
   const { t } = useLanguage();
   const [displayImage, setDisplayImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingProduct, setIsGeneratingProduct] = useState(false); // New State
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'schematic' | 'ai'>('schematic');
 
@@ -162,7 +163,6 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
       const ai = new GoogleGenAI({ apiKey });
       
       // Prompt for gemini-2.5-flash-image
-      // We request a generic machine of this TYPE, not specific to this instance, to reuse it.
       const prompt = `
         Create a professional, high-fidelity 2.5D isometric industrial vector illustration of a generic ${line.processType} machine.
         
@@ -170,7 +170,7 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
         - Style: Flat vector art, technical infographic style (like Adobe Illustrator).
         - Perspective: Strict Isometric projection (30-degree angles).
         - Color Palette: Industrial Slate Grey, White, and Safety Yellow accents.
-        - Background: Solid dark color #080b12 (to match the application background seamlessly).
+        - Background: Solid dark color #0B1120 (to match the application background seamlessly).
         - Lighting: Soft, studio lighting, no harsh shadows.
         - Details: Display mechanical components clearly.
         
@@ -209,7 +209,6 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
               foundImage = true;
             } catch (storageErr) {
               console.error("Storage quota exceeded:", storageErr);
-              // Even if save fails, show the image temporarily
               setDisplayImage(base64Image);
               setErrorMsg("Storage full: Image shown but not saved.");
               foundImage = true;
@@ -229,6 +228,71 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
       if (!displayImage) handleSwitchToSchematic();
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // NEW: Product AI Generation
+  const handleGenerateProductAI = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!line.currentProduct) return;
+    
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      alert("API Key not found");
+      return;
+    }
+
+    setIsGeneratingProduct(true);
+
+    try {
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const prompt = `
+        Create a high-fidelity 2.5D isometric vector illustration of this industrial product: ${line.currentProduct.name}.
+        Type: Electronic automotive component, copper busbar, or connector housing.
+        
+        Style Requirements:
+        - Style: Clean vector art, technical documentation style.
+        - Perspective: Isometric.
+        - Background: Solid dark color #0B1120 (EXACTLY MATCH HEX #0B1120).
+        - Object Appearance: Metallic textures (gold/silver/copper plating) or engineering plastic (blue/black).
+        - No text, no labels. Isolated object centered.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [{ text: prompt }],
+        },
+        config: {
+           imageConfig: { aspectRatio: "1:1" }
+        }
+      });
+
+      if (response && response.candidates && response.candidates[0].content.parts) {
+        for (const part of response.candidates[0].content.parts) {
+           if (part.inlineData && part.inlineData.data) {
+              const base64Image = `data:image/png;base64,${part.inlineData.data}`;
+              const compressed = await compressImage(base64Image, 400); // Smaller size for products
+              
+              // SAVE GLOBAL PRODUCT ASSET
+              localStorage.setItem(`global_product_${line.currentProduct.name}`, compressed);
+              
+              // Dispatch event to update tooltips
+              window.dispatchEvent(new Event('assetUpdated'));
+              
+              alert("Product Digital Twin Created & Saved!");
+              break;
+           }
+        }
+      }
+
+    } catch (err: any) {
+      console.error("Product Gen Failed", err);
+      alert("Failed to generate product image.");
+    } finally {
+      setIsGeneratingProduct(false);
     }
   };
 
@@ -276,12 +340,32 @@ export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClos
             ))}
             
             {/* OEE Big Card */}
-            <div className="col-span-2 bg-gradient-to-r from-yellow-400/10 to-transparent p-4 rounded-xl border border-yellow-400/20 flex items-center justify-between">
-               <div>
-                 <span className="text-xs text-yellow-400 font-bold uppercase">{t('realtimeOee')}</span>
-                 <div className="text-4xl font-black text-white mt-1">{line.oee}%</div>
+            <div className="col-span-2 bg-gradient-to-r from-yellow-400/10 to-transparent p-4 rounded-xl border border-yellow-400/20 flex flex-col justify-between">
+               <div className="flex justify-between items-start">
+                 <div>
+                   <span className="text-xs text-yellow-400 font-bold uppercase">{t('realtimeOee')}</span>
+                   <div className="text-4xl font-black text-white mt-1">{line.oee}%</div>
+                 </div>
+                 {/* PRODUCT GENERATION BUTTON */}
+                 {line.currentProduct && (
+                   <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2 bg-black/40 px-2 py-1 rounded border border-white/10">
+                        <Package size={12} className="text-gray-400"/>
+                        <span className="text-[10px] text-gray-300">{line.currentProduct.name}</span>
+                      </div>
+                      <button 
+                        onClick={handleGenerateProductAI}
+                        disabled={isGeneratingProduct}
+                        className="flex items-center gap-1 px-2 py-1 bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/50 rounded text-[9px] text-purple-300 transition-colors"
+                        title="Generate Product Digital Twin"
+                      >
+                        {isGeneratingProduct ? <RefreshCw size={10} className="animate-spin"/> : <Zap size={10}/>}
+                        GEN AI ASSET
+                      </button>
+                   </div>
+                 )}
                </div>
-               <div className="h-16 w-32">
+               <div className="h-16 w-full mt-2">
                  <ResponsiveContainer width="100%" height="100%">
                    <AreaChart data={historyData}>
                      <Area type="monotone" dataKey="value" stroke="#facc15" fill="#facc15" fillOpacity={0.2} strokeWidth={2} />
