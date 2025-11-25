@@ -1,8 +1,2 @@
-declare module '@google/genai' {
-  export class GoogleGenAI {
-    constructor(config: { apiKey: string });
-    models: {
-      generateContent: (params: any) => Promise<any>;
-    };
-  }
-}
+// This file is intentionally left empty as the @google/genai dependency has been removed.
+// We are now using staticAssets.ts for digital twin visualizations.
