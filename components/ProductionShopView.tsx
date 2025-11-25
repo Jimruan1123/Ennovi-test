@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProductionLine, WorkshopData } from '../types';
 import { GlassCard } from './GlassCard';
 import { Hammer, Box, FlaskConical, Wrench, AlertTriangle, CheckCircle2, User, Calendar } from 'lucide-react';
@@ -14,32 +14,21 @@ interface ProductionShopViewProps {
 const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
   
   // Material Color Palettes (Top / Left / Right Faces for Isometric 3D)
-  
-  // Engineering Plastic (Blue)
-  const PLASTIC_TOP = "#60a5fa"; // blue-400
-  const PLASTIC_LEFT = "#2563eb"; // blue-600
-  const PLASTIC_RIGHT = "#1e40af"; // blue-800
-  
-  // Copper / Gold
-  const COPPER_TOP = "#fcd34d"; // amber-300
-  const COPPER_LEFT = "#d97706"; // amber-600
-  const COPPER_RIGHT = "#92400e"; // amber-800
-
-  // Tinned Metal / Silver
-  const SILVER_TOP = "#e2e8f0"; // slate-200
-  const SILVER_LEFT = "#94a3b8"; // slate-400
-  const SILVER_RIGHT = "#475569"; // slate-600
-
-  // Gold Contact
-  const GOLD_TOP = "#fef08a"; // yellow-200
-  const GOLD_LEFT = "#eab308"; // yellow-500
+  const PLASTIC_TOP = "#60a5fa"; 
+  const PLASTIC_LEFT = "#2563eb"; 
+  const PLASTIC_RIGHT = "#1e40af"; 
+  const COPPER_TOP = "#fcd34d"; 
+  const COPPER_LEFT = "#d97706"; 
+  const COPPER_RIGHT = "#92400e";
+  const SILVER_TOP = "#e2e8f0"; 
+  const SILVER_LEFT = "#94a3b8"; 
+  const SILVER_RIGHT = "#475569";
+  const GOLD_TOP = "#fef08a"; 
+  const GOLD_LEFT = "#eab308"; 
 
   return (
     <div className="w-full h-full bg-[#0B1120] relative overflow-hidden group">
-      {/* Grid Background */}
       <div className="absolute inset-0" style={{backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
-      
-      {/* Technical Decorators */}
       <div className="absolute top-2 left-2 border-l border-t border-white/10 w-3 h-3"></div>
       <div className="absolute bottom-2 right-2 border-r border-b border-white/10 w-3 h-3"></div>
       <div className="absolute top-2 right-2 text-[8px] font-mono text-gray-600">SCALE 1:1</div>
@@ -47,16 +36,10 @@ const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
       <svg viewBox="0 0 200 120" className="w-full h-full p-4 drop-shadow-2xl">
         {type.includes('connector') || type.includes('Hsg') ? (
            <g transform="translate(100, 75)">
-              {/* ISO Box: Connector Body */}
-              {/* 1. Main Housing Block */}
-              <path d="M-45 -25 L0 -45 L45 -25 L0 -5 Z" fill={PLASTIC_TOP} stroke={PLASTIC_LEFT} strokeWidth="0.5" /> {/* Top */}
-              <path d="M-45 -25 L-45 25 L0 45 L0 -5 Z" fill={PLASTIC_LEFT} stroke={PLASTIC_RIGHT} strokeWidth="0.5" /> {/* Left */}
-              <path d="M0 -5 L0 45 L45 25 L45 -25 Z" fill={PLASTIC_RIGHT} stroke={PLASTIC_RIGHT} strokeWidth="0.5" /> {/* Right */}
-              
-              {/* 2. Inner Cavity (Darker) */}
+              <path d="M-45 -25 L0 -45 L45 -25 L0 -5 Z" fill={PLASTIC_TOP} stroke={PLASTIC_LEFT} strokeWidth="0.5" />
+              <path d="M-45 -25 L-45 25 L0 45 L0 -5 Z" fill={PLASTIC_LEFT} stroke={PLASTIC_RIGHT} strokeWidth="0.5" />
+              <path d="M0 -5 L0 45 L45 25 L45 -25 Z" fill={PLASTIC_RIGHT} stroke={PLASTIC_RIGHT} strokeWidth="0.5" />
               <path d="M-35 -20 L0 -35 L35 -20 L0 -5 Z" fill="#0f172a" opacity="0.6" />
-              
-              {/* 3. Pins inside (Gold) */}
               <g transform="translate(-12, -15)">
                  <rect x="0" y="0" width="4" height="12" fill={GOLD_LEFT} transform="skewY(26.5)" />
                  <path d="M0 0 L4 -2 L4 0 L0 2 Z" fill={GOLD_TOP} />
@@ -65,53 +48,33 @@ const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
                  <rect x="0" y="0" width="4" height="12" fill={GOLD_LEFT} transform="skewY(26.5)" />
                  <path d="M0 0 L4 -2 L4 0 L0 2 Z" fill={GOLD_TOP} />
               </g>
-
-              {/* 4. Mounting Flanges (Side Details) */}
               <path d="M-45 0 L-55 -5 L-55 15 L-45 20 Z" fill={PLASTIC_LEFT} />
               <path d="M-55 -5 L-45 -10 L-45 0 L-55 5 Z" fill={PLASTIC_TOP} />
-              
               <path d="M45 0 L55 -5 L55 15 L45 20 Z" fill={PLASTIC_RIGHT} />
               <path d="M45 -10 L55 -5 L45 0 L35 -5 Z" fill={PLASTIC_TOP} />
            </g>
         ) : type.includes('Busbar') ? (
            <g transform="translate(90, 60)">
-              {/* Copper Busbar - Bent Z-Shape */}
-              {/* Segment 1 (Horizontal Bottom) */}
               <path d="M0 10 L40 -10 L70 5 L30 25 Z" fill={COPPER_TOP} />
               <path d="M0 10 L0 18 L30 33 L30 25 Z" fill={COPPER_LEFT} />
               <path d="M30 25 L70 5 L70 13 L30 33 Z" fill={COPPER_RIGHT} />
-
-              {/* Segment 2 (Vertical Bend) */}
               <path d="M0 10 L-20 0 L-20 -50 L0 -40 Z" fill={COPPER_LEFT} />
               <path d="M-20 -50 L0 -40 L40 -60 L20 -70 Z" fill={COPPER_TOP} />
               <path d="M0 10 L40 -10 L40 -60 L0 -40 Z" fill={COPPER_RIGHT} />
-
-              {/* Segment 3 (Top Tab) */}
               <path d="M-20 -50 L-50 -35 L-30 -25 L0 -40 Z" fill={COPPER_TOP} />
               <path d="M-50 -35 L-50 -27 L-30 -17 L-30 -25 Z" fill={COPPER_LEFT} />
-              
-              {/* Punched Hole */}
               <ellipse cx="50" cy="8" rx="6" ry="3.5" fill="#0f172a" transform="rotate(-26)" stroke={COPPER_RIGHT} strokeWidth="0.5" />
            </g>
         ) : (
            <g transform="translate(100, 70)">
-              {/* Sensor Terminal - Complex Stamping */}
-              
-              {/* Rear Crimp Wings (U-Shape) */}
               <path d="M-50 -10 L-30 0 L-30 20 L-50 10 Z" fill={SILVER_LEFT} />
               <path d="M-50 -10 L-30 0 L-10 -10 L-30 -20 Z" fill={SILVER_TOP} />
               <path d="M-30 0 L-10 -10 L-10 10 L-30 20 Z" fill={SILVER_RIGHT} />
-
-              {/* Middle Transition */}
               <path d="M-10 -10 L30 -30 L30 -10 L-10 10 Z" fill={SILVER_RIGHT} />
               <path d="M-10 -10 L30 -30 L50 -20 L10 0 Z" fill={SILVER_TOP} />
-              
-              {/* Front Contact (Pin) */}
-              <path d="M50 -20 L80 -5 L80 5 L50 0 Z" fill={GOLD_TOP} /> {/* Gold Tip */}
+              <path d="M50 -20 L80 -5 L80 5 L50 0 Z" fill={GOLD_TOP} />
               <path d="M50 -20 L50 0 L10 0 L10 -10 Z" fill={SILVER_LEFT} /> 
-              <path d="M80 -5 L80 5 L50 0 Z" fill={GOLD_LEFT} /> {/* Tip Side */}
-
-              {/* Locking Lance Detail */}
+              <path d="M80 -5 L80 5 L50 0 Z" fill={GOLD_LEFT} /> 
               <path d="M20 -15 L30 -10 L30 -5 L20 -10 Z" fill={SILVER_LEFT} />
            </g>
         )}
@@ -126,9 +89,6 @@ const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
 // 2. Machine SVG Paths - Strict 2.5D Isometric
 const MachineSVG = ({ type }: { type: string }) => {
   const commonClasses = "absolute inset-0 w-full h-full pointer-events-none transition-all duration-500";
-  
-  // Colors for faces to create 3D depth
-  // Light direction: Top-Left
   const FACE_TOP = "#475569";   // Lightest
   const FACE_LEFT = "#334155";  // Medium
   const FACE_RIGHT = "#1e293b"; // Darkest
@@ -145,103 +105,62 @@ const MachineSVG = ({ type }: { type: string }) => {
       </defs>
 
       {type === 'stamping' && (
-        <g transform="translate(100, 100)"> {/* Center Point */}
-           {/* Coordinates transformed for Isometric: x' = (x-y)*cos(30), y' = (x+y)*sin(30) - z */}
-           {/* Simplified Isometric Drawing Logic manually calculated for clarity */}
-           
-           {/* 1. Base (Bed) */}
-           <path d="M-60 50 L0 80 L60 50 L0 20 Z" fill={FACE_TOP} stroke={STROKE} /> {/* Top of Bed */}
-           <path d="M-60 50 L-60 70 L0 100 L0 80 Z" fill={FACE_LEFT} stroke={STROKE} /> {/* Left Side */}
-           <path d="M0 100 L60 70 L60 50 L0 80 Z" fill={FACE_RIGHT} stroke={STROKE} /> {/* Right Side */}
-
-           {/* 2. Columns (H-Frame) */}
-           {/* Left Column */}
+        <g transform="translate(100, 100)"> 
+           <path d="M-60 50 L0 80 L60 50 L0 20 Z" fill={FACE_TOP} stroke={STROKE} />
+           <path d="M-60 50 L-60 70 L0 100 L0 80 Z" fill={FACE_LEFT} stroke={STROKE} />
+           <path d="M0 100 L60 70 L60 50 L0 80 Z" fill={FACE_RIGHT} stroke={STROKE} />
            <path d="M-50 25 L-30 35 L-30 -60 L-50 -70 Z" fill={FACE_LEFT} stroke={STROKE} />
            <path d="M-30 35 L-10 25 L-10 -70 L-30 -60 Z" fill={FACE_RIGHT} stroke={STROKE} />
-           
-           {/* Right Column */}
            <path d="M10 25 L30 35 L30 -60 L10 -70 Z" fill={FACE_LEFT} stroke={STROKE} />
            <path d="M30 35 L50 25 L50 -70 L30 -60 Z" fill={FACE_RIGHT} stroke={STROKE} />
-
-           {/* 3. Crown (Top Header) */}
-           <path d="M-55 -70 L0 -95 L55 -70 L0 -45 Z" fill={FACE_TOP} stroke={STROKE} /> {/* Top */}
-           <path d="M-55 -70 L-55 -40 L0 -15 L0 -45 Z" fill={FACE_LEFT} stroke={STROKE} /> {/* Front Left */}
-           <path d="M0 -15 L55 -40 L55 -70 L0 -45 Z" fill={FACE_RIGHT} stroke={STROKE} /> {/* Front Right */}
-           
-           {/* Flywheel (Detail) */}
+           <path d="M-55 -70 L0 -95 L55 -70 L0 -45 Z" fill={FACE_TOP} stroke={STROKE} />
+           <path d="M-55 -70 L-55 -40 L0 -15 L0 -45 Z" fill={FACE_LEFT} stroke={STROKE} />
+           <path d="M0 -15 L55 -40 L55 -70 L0 -45 Z" fill={FACE_RIGHT} stroke={STROKE} />
            <ellipse cx="40" cy="-60" rx="5" ry="10" fill={ACCENT} className="animate-[spin_2s_linear_infinite]" />
-
-           {/* 4. Slide (Moving Part) */}
            <g className="animate-[bounce_1s_infinite]">
               <path d="M-25 -40 L0 -52 L25 -40 L0 -28 Z" fill={FACE_TOP} />
               <path d="M-25 -40 L-25 0 L0 12 L0 -28 Z" fill={FACE_LEFT} stroke={STROKE} />
               <path d="M0 12 L25 0 L25 -40 L0 -28 Z" fill={FACE_RIGHT} stroke={STROKE} />
            </g>
-
-           {/* 5. Die Set (Yellow Zone) */}
            <path d="M-20 30 L0 40 L20 30 L0 20 Z" fill={ACCENT} fillOpacity="0.3" stroke={ACCENT} />
         </g>
       )}
 
       {type === 'molding' && (
         <g transform="translate(100, 110)">
-           {/* 1. Base Machine Bed (Long) */}
            <path d="M-80 30 L0 70 L80 30 L0 -10 Z" fill={FACE_TOP} stroke={STROKE} />
            <path d="M-80 30 L-80 50 L0 90 L0 70 Z" fill={FACE_LEFT} stroke={STROKE} />
            <path d="M0 90 L80 50 L80 30 L0 70 Z" fill={FACE_RIGHT} stroke={STROKE} />
-
-           {/* 2. Clamping Unit (Left - Big Box) */}
-           <path d="M-70 0 L-30 20 L-30 -40 L-70 -60 Z" fill={FACE_LEFT} stroke={STROKE} /> {/* Front */}
-           <path d="M-70 -60 L-30 -40 L0 -55 L-40 -75 Z" fill={FACE_TOP} stroke={STROKE} /> {/* Top */}
-           <path d="M-30 20 L0 5 L0 -55 L-30 -40 Z" fill={FACE_RIGHT} stroke={STROKE} /> {/* Side */}
-           
-           {/* Tie Bars */}
+           <path d="M-70 0 L-30 20 L-30 -40 L-70 -60 Z" fill={FACE_LEFT} stroke={STROKE} /> 
+           <path d="M-70 -60 L-30 -40 L0 -55 L-40 -75 Z" fill={FACE_TOP} stroke={STROKE} /> 
+           <path d="M-30 20 L0 5 L0 -55 L-30 -40 Z" fill={FACE_RIGHT} stroke={STROKE} /> 
            <line x1="-30" y1="-30" x2="10" y2="-50" stroke="#94a3b8" strokeWidth="2" />
            <line x1="-30" y1="10" x2="10" y2="-10" stroke="#94a3b8" strokeWidth="2" />
-
-           {/* Moving Platen */}
            <path d="M-10 10 L10 0 L10 -40 L-10 -30 Z" fill={FACE_LEFT} fillOpacity="0.8" stroke={STROKE} />
-
-           {/* 3. Injection Unit (Right - Cylinders) */}
            <path d="M20 -10 L70 -35 L70 -15 L20 10 Z" fill={FACE_RIGHT} stroke={STROKE} />
-           
-           {/* Hopper (Funnel) */}
            <path d="M40 -30 L50 -60 L65 -65 L55 -35 Z" fill={ACCENT} fillOpacity="0.8" />
            <ellipse cx="57" cy="-62" rx="8" ry="3" fill={ACCENT} />
-
-           {/* Screen/Control */}
            <path d="M10 40 L20 35 L20 50 L10 55 Z" fill="#000" stroke="cyan" strokeWidth="0.5" />
         </g>
       )}
 
       {type === 'plating' && (
         <g transform="translate(100, 100)">
-           {/* Tank Array - Multiple units */}
            {[-40, 0, 40].map((offset, i) => (
              <g key={i} transform={`translate(${offset}, ${offset * 0.5})`}>
-                {/* Tank Outer */}
                 <path d="M-25 15 L0 27 L25 15 L0 3 Z" fill={FACE_TOP} stroke={STROKE} />
                 <path d="M-25 15 L-25 40 L0 52 L0 27 Z" fill={FACE_LEFT} stroke={STROKE} />
                 <path d="M0 52 L25 40 L25 15 L0 27 Z" fill={FACE_RIGHT} stroke={STROKE} />
-                
-                {/* Liquid Surface */}
                 <path d="M-20 15 L0 24 L20 15 L0 6 Z" fill={i === 1 ? ACCENT : "cyan"} fillOpacity="0.4" className="animate-pulse" />
              </g>
            ))}
-
-           {/* Gantry Structure */}
-           <path d="M-60 50 L-60 -50" stroke={STROKE} strokeWidth="2" /> {/* Front Left Leg */}
-           <path d="M60 110 L60 10" stroke={STROKE} strokeWidth="2" /> {/* Front Right Leg */}
-           <path d="M0 -80 L0 20" stroke={STROKE} strokeWidth="1" opacity="0.5" /> {/* Back Leg */}
-           
-           {/* Top Beam */}
+           <path d="M-60 50 L-60 -50" stroke={STROKE} strokeWidth="2" /> 
+           <path d="M60 110 L60 10" stroke={STROKE} strokeWidth="2" /> 
+           <path d="M0 -80 L0 20" stroke={STROKE} strokeWidth="1" opacity="0.5" /> 
            <path d="M-60 -50 L60 10" stroke={STROKE} strokeWidth="4" />
-           
-           {/* Hoist */}
            <g transform="translate(0, -20)">
               <rect x="-10" y="-5" width="20" height="10" fill={ACCENT} transform="skewY(26)" />
               <line x1="0" y1="5" x2="0" y2="40" stroke="white" strokeDasharray="2 2" />
-              {/* Rack */}
               <path d="M-10 40 L0 45 L10 40 L0 35 Z" fill="none" stroke={ACCENT} />
            </g>
         </g>
@@ -249,14 +168,9 @@ const MachineSVG = ({ type }: { type: string }) => {
 
       {type === 'assembly' && (
         <g transform="translate(100, 100)">
-           {/* Conveyor Belt */}
            <path d="M-80 40 L80 -40" stroke="#1e293b" strokeWidth="20" strokeLinecap="round" />
            <path d="M-80 40 L80 -40" stroke={STROKE} strokeWidth="16" strokeDasharray="10 10" className="animate-[dash_2s_linear_infinite]" />
-           
-           {/* Robot Base */}
            <ellipse cx="0" cy="20" rx="20" ry="10" fill={FACE_RIGHT} stroke={STROKE} />
-           
-           {/* Robot Arm */}
            <path d="M0 20 L0 -30" stroke="#94a3b8" strokeWidth="6" />
            <circle cx="0" cy="-30" r="6" fill={ACCENT} />
            <path d="M0 -30 L40 -50" stroke="#94a3b8" strokeWidth="4" />
@@ -275,6 +189,19 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
   const currentShop = workshops.find(w => w.id === activeShopId) || workshops[0];
   const [hoveredLine, setHoveredLine] = useState<ProductionLine | null>(null);
   const [hoveredSQDCIP, setHoveredSQDCIP] = useState<{key: string, status: string} | null>(null);
+  const [globalAsset, setGlobalAsset] = useState<string | null>(null);
+
+  // LOAD ASSETS: Check LOCAL STORAGE for GLOBAL AI ASSET
+  const loadAssets = () => {
+    const cached = localStorage.getItem(`global_asset_${currentShop.type}`);
+    setGlobalAsset(cached);
+  };
+
+  useEffect(() => {
+    loadAssets();
+    window.addEventListener('assetUpdated', loadAssets);
+    return () => window.removeEventListener('assetUpdated', loadAssets);
+  }, [currentShop]);
 
   // SQDCIP Helpers
   const getSQDCIPInfo = (key: string, status: string) => {
@@ -305,7 +232,6 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
         status === 'normal' ? 'bg-green-500' : status === 'warning' ? 'bg-orange-500' : 'bg-red-500 animate-pulse'
       }`} />
       
-      {/* Absolute Tooltip - Pointer events none is critical to prevent "stuck" behavior */}
       {hoveredSQDCIP?.key === label && (
         <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 w-64 bg-gray-900 border border-white/20 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] p-4 pointer-events-none animate-in fade-in zoom-in-95 duration-200 z-[100]">
            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-l border-t border-white/20 rotate-45" />
@@ -385,7 +311,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
         {/* 2. Left Column: Status & Map (8 Cols) */}
         <div className="col-span-12 lg:col-span-9 flex flex-col gap-6">
           
-          {/* SQDCIP Dashboard - Explicitly visible overflow */}
+          {/* SQDCIP Dashboard */}
           <GlassCard className="p-4 flex flex-wrap justify-between items-center gap-4 bg-black/40 !overflow-visible relative z-20">
              <div className="flex flex-col">
                 <span className="text-xs text-gray-500 uppercase tracking-widest">{t('shopStatus')}</span>
@@ -401,12 +327,10 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
              </div>
           </GlassCard>
 
-          {/* 2D Digital Twin Map - REDESIGNED LAYERING FOR TOOLTIP VISIBILITY */}
-          {/* FIX: Parent has z-0 and no overflow-hidden to allow tooltips to pop out */}
+          {/* 2D Digital Twin Map */}
           <div className="relative flex-1 min-h-[500px] group z-0">
             
             {/* LAYER 1: Background & Borders (Clipped) */}
-            {/* This absolute div holds the background and border, handling the clipping for rounded corners */}
             <div className="absolute inset-0 rounded-xl border border-white/10 bg-[#0F131A] overflow-hidden shadow-inner pointer-events-none">
                 <div className="absolute inset-0 opacity-20" 
                      style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}} 
@@ -416,7 +340,6 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
             </div>
 
             {/* LAYER 2: Content (Visible Overflow) */}
-            {/* This layer sits on top and allows children (tooltips) to overflow the rounded boundaries */}
             <div className="absolute inset-0 p-12">
                
                {/* Map Header */}
@@ -427,7 +350,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                {/* Machines Grid */}
                <div className="grid grid-cols-4 gap-8 h-full">
                {currentShop.lines.map((line, index) => {
-                 const isTopRow = index < 4; // Check if it's the first row
+                 const isTopRow = index < 4; 
                  
                  return (
                  <div 
@@ -438,14 +361,21 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                  >
                     {/* Machine Block */}
                     <div className={`
-                      h-full w-full flex flex-col items-center justify-end pb-8 transition-all duration-500 relative
+                      h-full w-full flex flex-col items-center justify-end pb-8 transition-all duration-500 relative rounded-xl overflow-hidden
                       ${line.status === 'critical' ? 'drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]' : ''}
                     `}>
-                       {/* SVG Background - 2.5D */}
-                       <MachineSVG type={currentShop.type} />
+                       {/* SVG Background - 2.5D OR GLOBAL AI ASSET */}
+                       {globalAsset ? (
+                         <div className="absolute inset-0 p-4 animate-in fade-in duration-700">
+                            <img src={globalAsset} className="w-full h-full object-contain drop-shadow-2xl" alt="Machine" />
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-purple-500/30 border border-purple-500/50 rounded text-[8px] text-purple-200 font-bold backdrop-blur-sm">AI TWIN</div>
+                         </div>
+                       ) : (
+                         <MachineSVG type={currentShop.type} />
+                       )}
                        
                        {/* Floor Reflection/Shadow */}
-                       <div className="absolute bottom-4 w-2/3 h-4 bg-black/50 blur-md rounded-[100%]" />
+                       {!globalAsset && <div className="absolute bottom-4 w-2/3 h-4 bg-black/50 blur-md rounded-[100%]" />}
 
                        {/* Status Dot Overlay */}
                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex flex-col items-center gap-1 z-20 opacity-0 group-hover/machine:opacity-100 transition-opacity duration-300`}>
@@ -453,7 +383,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                           <div className={`w-2 h-2 rounded-full ${line.status === 'normal' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
                        </div>
 
-                       {/* Floating Stats (Always Visible, Tech Style) */}
+                       {/* Floating Stats */}
                        <div className="absolute -top-2 right-0 z-20">
                           <div className={`
                             flex flex-col items-end text-[10px] font-mono px-2 py-1 rounded border-l-2 backdrop-blur-sm
@@ -465,7 +395,7 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                        </div>
                     </div>
 
-                    {/* Hover Card (Product Info) - Z-INDEX 100 with Smart Positioning */}
+                    {/* Hover Card */}
                     {hoveredLine?.id === line.id && line.currentProduct && (
                        <div 
                         className={`
@@ -473,19 +403,16 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
                           ${isTopRow ? 'top-full mt-4' : '-top-36 bottom-full mb-3'}
                         `}
                        >
-                          {/* Triangle indicator */}
                           {isTopRow ? (
                             <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#0B1120] border-l border-t border-white/20 rotate-45 z-20" />
                           ) : (
                              <div className="hidden" />
                           )}
                           
-                          {/* Top: Wireframe View (Updated to 3D) */}
                           <div className="h-32 bg-[#0B1120] border-b border-white/10 relative z-10">
                              <ProductWireframe type={line.currentProduct.name} />
                           </div>
                           
-                          {/* Bottom: Info */}
                           <div className="p-3 bg-[#0B1120] relative z-10">
                              <div className="flex justify-between items-center mb-1">
                                 <span className="font-bold text-white text-sm">{line.currentProduct.name}</span>

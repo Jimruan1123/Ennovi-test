@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProductionLine, Status } from '../types';
-import { AlertTriangle, Hammer, Box, FlaskConical, Wrench } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface FactoryMapProps {
@@ -157,6 +157,32 @@ const MachineSVG = ({ type, status }: { type: string, status: Status }) => {
 export const FactoryMap: React.FC<FactoryMapProps> = ({ lines, onLineClick, activeLineId }) => {
   const { t } = useLanguage();
   const [hoveredLineId, setHoveredLineId] = useState<string | null>(null);
+  const [globalAssets, setGlobalAssets] = useState<Record<string, string>>({});
+
+  // LOAD ASSETS: Check LOCAL STORAGE for GLOBAL AI ASSETS by PROCESS TYPE
+  const loadAssets = () => {
+    const assets: Record<string, string> = {};
+    
+    // Define the process types we care about
+    const types = ['stamping', 'molding', 'plating', 'assembly'];
+    
+    types.forEach(type => {
+      const cached = localStorage.getItem(`global_asset_${type}`);
+      if (cached) {
+        assets[type] = cached;
+      }
+    });
+    setGlobalAssets(assets);
+  };
+
+  useEffect(() => {
+    loadAssets();
+    
+    // Listen for Asset Updates from ProcessDrillDown
+    const handleAssetUpdate = () => loadAssets();
+    window.addEventListener('assetUpdated', handleAssetUpdate);
+    return () => window.removeEventListener('assetUpdated', handleAssetUpdate);
+  }, []);
 
   // Helper to determine strong background color for alerts
   const getAlertStyle = (status: Status, isSelected: boolean) => {
@@ -193,6 +219,7 @@ export const FactoryMap: React.FC<FactoryMapProps> = ({ lines, onLineClick, acti
           const isSelected = activeLineId === line.id;
           const isHovered = hoveredLineId === line.id;
           const isTopRow = index < 4; 
+          const customImg = globalAssets[line.processType]; // Use Global Asset by Type
 
           return (
             <div 
@@ -208,8 +235,15 @@ export const FactoryMap: React.FC<FactoryMapProps> = ({ lines, onLineClick, acti
                   ${getAlertStyle(line.status, isSelected)}
                 `}
               >
-                {/* Isometric Machine Icon */}
-                <MachineSVG type={line.processType} status={line.status} />
+                {/* Isometric Machine Icon OR AI Custom Asset */}
+                {customImg ? (
+                  <div className="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-700">
+                    <img src={customImg} alt="AI Twin" className="w-full h-full object-contain drop-shadow-2xl" />
+                    <div className="absolute top-1 right-1 px-1 py-0.5 bg-purple-500/30 border border-purple-500/50 rounded text-[8px] text-purple-200 font-bold backdrop-blur-sm">AI V2</div>
+                  </div>
+                ) : (
+                  <MachineSVG type={line.processType} status={line.status} />
+                )}
 
                 {/* Overlay Info */}
                 <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-20">
