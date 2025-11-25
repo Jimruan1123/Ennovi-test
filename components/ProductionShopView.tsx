@@ -17,7 +17,7 @@ const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
 
   useEffect(() => {
     const loadAsset = () => {
-      const cached = localStorage.getItem(`global_product_auto_v2_${type}`);
+      const cached = localStorage.getItem(`global_product_auto_v4_${type}`);
       setAiAsset(cached);
     };
     loadAsset();
@@ -310,23 +310,26 @@ export const ProductionShopView: React.FC<ProductionShopViewProps> = ({ workshop
     <div className="flex flex-col gap-6 h-full pb-20 animate-in fade-in duration-500">
       
       {/* 1. Shop Selector Tabs */}
-      <div className="flex gap-4 overflow-x-auto pb-2 border-b border-white/10">
-        {workshops.map(shop => (
-          <button
-            key={shop.id}
-            onClick={() => setActiveShopId(shop.id)}
-            className={`
-              flex items-center gap-3 px-6 py-3 rounded-t-lg transition-all border-b-2 whitespace-nowrap
-              ${activeShopId === shop.id 
-                ? 'bg-white/5 border-yellow-400 text-white' 
-                : 'bg-transparent border-transparent text-gray-500 hover:text-gray-300'}
-            `}
-          >
-            {getIcon(shop.type)}
-            <span className="uppercase font-bold tracking-wider text-sm">{shop.name}</span>
-            {shop.sqdcip.q === 'critical' && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
-          </button>
-        ))}
+      {/* ADDED: flex-none/shrink-0 to prevent height compression. Added z-index to sit on top of map. */}
+      <div className="flex-none shrink-0 relative z-30">
+        <div className="flex gap-4 overflow-x-auto pb-4 border-b border-white/10 scrollbar-hide">
+          {workshops.map(shop => (
+            <button
+              key={shop.id}
+              onClick={() => setActiveShopId(shop.id)}
+              className={`
+                flex items-center gap-3 px-6 py-4 rounded-t-lg transition-all border-b-2 whitespace-nowrap min-w-fit
+                ${activeShopId === shop.id 
+                  ? 'bg-white/5 border-yellow-400 text-white' 
+                  : 'bg-transparent border-transparent text-gray-500 hover:text-gray-300'}
+              `}
+            >
+              {getIcon(shop.type)}
+              <span className="uppercase font-bold tracking-wider text-sm">{shop.name}</span>
+              {shop.sqdcip.q === 'critical' && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-6 h-full">

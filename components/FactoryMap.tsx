@@ -17,7 +17,7 @@ const ProductWireframe = ({ type = 'connector' }: { type?: string }) => {
 
   useEffect(() => {
     const loadAsset = () => {
-      const cached = localStorage.getItem(`global_product_auto_v2_${type}`);
+      const cached = localStorage.getItem(`global_product_auto_v4_${type}`);
       setAiAsset(cached);
     };
     loadAsset();
@@ -264,7 +264,7 @@ export const FactoryMap: React.FC<FactoryMapProps> = ({ lines, onLineClick, acti
                 {customImg ? (
                   <div className="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-700">
                     <img src={customImg} alt="AI Twin" className="w-full h-full object-contain drop-shadow-2xl" />
-                    <div className="absolute top-1 right-1 px-1 py-0.5 bg-purple-500/30 border border-purple-500/50 rounded text-[8px] text-purple-200 font-bold backdrop-blur-sm">AI V2</div>
+                    <div className="absolute top-1 right-1 px-1 py-0.5 bg-purple-500/30 border border-purple-500/50 rounded text-[8px] text-purple-200 font-bold backdrop-blur-sm">AI V4</div>
                   </div>
                 ) : (
                   <MachineSVG type={line.processType} status={line.status} />

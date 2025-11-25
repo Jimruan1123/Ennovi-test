@@ -21,29 +21,47 @@ import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk
 import { useLanguage } from './contexts/LanguageContext';
 
 // --- ASSET DAEMON: BACKGROUND AI GENERATOR ---
-// This component runs invisibly to pre-generate assets
+// This component runs invisibly to pre-generate assets (Machines & Products)
 const AssetDaemon = () => {
   useEffect(() => {
     const generateAssets = async () => {
-      // Define the critical products to pre-generate
+      // 1. Define Products to generate
       const products = [
         { 
-          name: 'HV Connector Hsg', 
-          type: 'connector',
+          key: 'global_product_auto_v4_HV Connector Hsg',
           prompt: 'A photorealistic 2.5D isometric vector illustration of an Automotive High-Voltage (HV) Connector Housing. Features: Distinctive Orange and Black safety plastic, complex locking mechanism, multi-pin interface. Style: Industrial technical art, sharp details, soft studio lighting. Background: Solid dark color #0B1120 (Matches app background).' 
         },
         { 
-          name: 'Busbar Clip', 
-          type: 'busbar',
+          key: 'global_product_auto_v4_Busbar Clip',
           prompt: 'A photorealistic 2.5D isometric vector illustration of an EV Battery Copper Busbar. Features: Thick bent copper metal, shiny metallic texture, partial orange insulation coating. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
         },
         { 
-          name: 'Sensor Terminal', 
-          type: 'terminal',
+          key: 'global_product_auto_v4_Sensor Terminal',
           prompt: 'A photorealistic 2.5D isometric vector illustration of a Precision Automotive Sensor Terminal. Features: Silver or Gold plated metal, stamped metal leadframe, macro view, complex bent geometry. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
         }
       ];
 
+      // 2. Define Machines to generate
+      const machines = [
+        {
+          key: 'global_asset_stamping',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of a Heavy Industrial Stamping Press. Features: Large metallic grey frame, safety yellow guards, hydraulic cylinders, heavy steel look. Style: Technical industrial art, clean lines. Background: Solid dark color #0B1120 (Matches app background).'
+        },
+        {
+          key: 'global_asset_molding',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of an Industrial Injection Molding Machine. Features: Horizontal layout, large hopper feeder on top, complex clamping unit, piping details. White/Grey/Blue color scheme. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
+        },
+        {
+          key: 'global_asset_plating',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of an Industrial Electroplating Line. Features: Series of chemical tanks, overhead gantry crane system, metallic and liquid textures. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
+        },
+        {
+          key: 'global_asset_assembly',
+          prompt: 'A photorealistic 2.5D isometric vector illustration of an Automated Assembly Cell with a Robotic Arm. Features: Orange/White robotic arm, conveyor belt, safety glass enclosure, high-tech electronics. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
+        }
+      ];
+
+      const allAssets = [...products, ...machines];
       let hasUpdates = false;
 
       // Helper to safely get API key
@@ -70,14 +88,14 @@ const AssetDaemon = () => {
 
       const ai = new GoogleGenAI({ apiKey });
 
-      for (const prod of products) {
-        const key = `global_product_auto_v2_${prod.name}`; // V2 forces regeneration of old images
-        if (!localStorage.getItem(key)) {
-          console.log(`Daemon: Generating ${prod.name}...`);
+      for (const item of allAssets) {
+        // Check if asset exists in localStorage
+        if (!localStorage.getItem(item.key)) {
+          console.log(`Daemon: Generating ${item.key}...`);
           try {
              const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',
-                contents: { parts: [{ text: prod.prompt }] },
+                contents: { parts: [{ text: item.prompt }] },
                 config: { imageConfig: { aspectRatio: "1:1" } }
              });
 
@@ -85,18 +103,18 @@ const AssetDaemon = () => {
              if (parts) {
                 for (const part of parts) {
                    if (part.inlineData && part.inlineData.data) {
-                      // Simple compression (resize to 300px for icons)
+                      // Simple compression (resize to 400px for decent quality but low size)
                       const img = new Image();
                       img.src = `data:image/png;base64,${part.inlineData.data}`;
                       await new Promise((resolve) => {
                          img.onload = () => {
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d');
-                            canvas.width = 300;
-                            canvas.height = 300;
-                            ctx?.drawImage(img, 0, 0, 300, 300);
+                            canvas.width = 400;
+                            canvas.height = 400;
+                            ctx?.drawImage(img, 0, 0, 400, 400);
                             const optimized = canvas.toDataURL('image/jpeg', 0.8);
-                            localStorage.setItem(key, optimized);
+                            localStorage.setItem(item.key, optimized);
                             hasUpdates = true;
                             resolve(true);
                          };
@@ -105,14 +123,14 @@ const AssetDaemon = () => {
                 }
              }
           } catch (err) {
-             console.error(`Failed to gen ${prod.name}`, err);
+             console.error(`Failed to gen ${item.key}`, err);
           }
         }
       }
 
       if (hasUpdates) {
         window.dispatchEvent(new Event('assetUpdated'));
-        console.log("Daemon: Assets updated and synced.");
+        console.log("Daemon: All assets updated and synced.");
       }
     };
 
