@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   Activity, AlertCircle, Clock, CheckCircle2, 
-  RefreshCw, Smartphone, X, Zap, ChevronRight, Menu, Truck, ShieldAlert, Layers, Globe
+  RefreshCw, Smartphone, X, Zap, ChevronRight, Menu, Truck, ShieldAlert, Layers, Globe, Database, Settings as SettingsIcon
 } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { KPIRing } from './components/KPIRing';
@@ -17,156 +17,43 @@ import { ProcessDrillDown } from './components/ProcessDrillDown';
 import { SupplierPanel } from './components/SupplierPanel';
 import { QualityDashboard } from './components/QualityDashboard';
 import { ProductionShopView } from './components/ProductionShopView';
-import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint } from './types';
+import { SettingsModal } from './components/SettingsModal';
+import { BootLoader } from './components/BootLoader';
+import { SystemDaemon } from './components/SystemDaemon';
+import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint, Snapshot } from './types';
 import { useLanguage } from './contexts/LanguageContext';
+import { STATIC_ASSETS } from './data/staticAssets';
 
-// --- ASSET DAEMON: BACKGROUND AI GENERATOR ---
-// This component runs invisibly to pre-generate assets (Machines & Products)
+// --- ASSET DAEMON: HYBRID LOADER ---
+// Checks if localStorage has assets (from Client-Side Generation).
+// If NOT, it loads the V7 Static SVG assets as a fallback.
 const AssetDaemon = () => {
   useEffect(() => {
-    const generateAssets = async () => {
-      // 1. Define Products to generate
-      const products = [
-        { 
-          key: 'global_product_auto_v4_HV Connector Hsg',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of an Automotive High-Voltage (HV) Connector Housing. Features: Distinctive Orange and Black safety plastic, complex locking mechanism, multi-pin interface. Style: Industrial technical art, sharp details, soft studio lighting. Background: Solid dark color #0B1120 (Matches app background).' 
-        },
-        { 
-          key: 'global_product_auto_v4_Busbar Clip',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of an EV Battery Copper Busbar. Features: Thick bent copper metal, shiny metallic texture, partial orange insulation coating. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
-        },
-        { 
-          key: 'global_product_auto_v4_Sensor Terminal',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of a Precision Automotive Sensor Terminal. Features: Silver or Gold plated metal, stamped metal leadframe, macro view, complex bent geometry. Style: Industrial technical art. Background: Solid dark color #0B1120 (Matches app background).' 
-        }
-      ];
+    // Check if we are running in "custom" mode (User generated assets via Console)
+    const versionControl = localStorage.getItem('asset_version_control');
+    
+    // If user has generated their own assets, do NOT overwrite them with static ones.
+    if (versionControl === 'custom_ai_v1') {
+      console.log("Daemon: Custom assets detected. Skipping static load.");
+      return;
+    }
 
-      // 2. Define Machines to generate
-      const machines = [
-        {
-          key: 'global_asset_stamping',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of a Heavy Industrial Stamping Press. Features: Large metallic grey frame, safety yellow guards, hydraulic cylinders, heavy steel look. Style: Technical industrial art, clean lines. Background: Solid dark color #0B1120 (Matches app background).'
-        },
-        {
-          key: 'global_asset_molding',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of an Industrial Injection Molding Machine. Features: Horizontal layout, large hopper feeder on top, complex clamping unit, piping details. White/Grey/Blue color scheme. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
-        },
-        {
-          key: 'global_asset_plating',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of an Industrial Electroplating Line. Features: Series of chemical tanks, overhead gantry crane system, metallic and liquid textures. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
-        },
-        {
-          key: 'global_asset_assembly',
-          prompt: 'A photorealistic 2.5D isometric vector illustration of an Automated Assembly Cell with a Robotic Arm. Features: Orange/White robotic arm, conveyor belt, safety glass enclosure, high-tech electronics. Style: Technical industrial art. Background: Solid dark color #0B1120 (Matches app background).'
-        }
-      ];
-
-      const allAssets = [...products, ...machines];
-      let hasUpdates = false;
-
-      // Helper to safely get API key
-      let apiKey = '';
-      try {
-        // @ts-ignore
-        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-           // @ts-ignore
-           apiKey = process.env.API_KEY;
-        }
-      } catch (e) {}
-
-      if (!apiKey) return;
-
-      // Lazy load AI SDK
-      let GoogleGenAI;
-      try {
-        const module = await import("@google/genai");
-        GoogleGenAI = module.GoogleGenAI;
-      } catch (e) {
-        console.warn("AI SDK not loaded");
-        return;
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-
-      for (const item of allAssets) {
-        // Check if asset exists in localStorage
-        if (!localStorage.getItem(item.key)) {
-          console.log(`Daemon: Generating ${item.key}...`);
-          try {
-             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: { parts: [{ text: item.prompt }] },
-                config: { imageConfig: { aspectRatio: "1:1" } }
-             });
-
-             const parts = response?.candidates?.[0]?.content?.parts;
-             if (parts) {
-                for (const part of parts) {
-                   if (part.inlineData && part.inlineData.data) {
-                      // Simple compression (resize to 400px for decent quality but low size)
-                      const img = new Image();
-                      img.src = `data:image/png;base64,${part.inlineData.data}`;
-                      await new Promise((resolve) => {
-                         img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            canvas.width = 400;
-                            canvas.height = 400;
-                            ctx?.drawImage(img, 0, 0, 400, 400);
-                            const optimized = canvas.toDataURL('image/jpeg', 0.8);
-                            localStorage.setItem(item.key, optimized);
-                            hasUpdates = true;
-                            resolve(true);
-                         };
-                      });
-                   }
-                }
-             }
-          } catch (err) {
-             console.error(`Failed to gen ${item.key}`, err);
-          }
-        }
-      }
-
-      if (hasUpdates) {
-        window.dispatchEvent(new Event('assetUpdated'));
-        console.log("Daemon: All assets updated and synced.");
-      }
-    };
-
-    // Run 1 second after mount
-    const timer = setTimeout(generateAssets, 1000);
-    return () => clearTimeout(timer);
+    // Otherwise, load V7 Static Assets (Fallback/Default)
+    // We use a specific key to ensure old V4/V5 assets are overwritten by V7 High-Fidelity SVGs
+    // Note: BootLoader usually handles this, this is a backup.
   }, []);
 
-  return null; // Invisible
+  return null;
 };
 
+// ... [DATA GENERATORS MOCK DATA] ...
 
-// --- ENNOVI MOCK DATA GENERATORS ---
-
-type Snapshot = {
-  time: string;
-  label: string;
-  kpis: KPI[];
-  lines: ProductionLine[];
-  materials: MaterialStatus[];
-  customers: Customer[];
-  suppliers: SupplierRisk[];
-  qualityData: QualityData;
-  workshops: WorkshopData[];
-  actions: ActionItem[];
-  spcData: any[];
-};
-
-// Mock Product Helper
 const getMockProduct = (type: string, id: string, targetOee?: number) => {
   const products = [
      { name: 'HV Connector Hsg', pn: 'EN-884-X', img: '' },
      { name: 'Busbar Clip', pn: 'EN-BB-02', img: '' },
      { name: 'Sensor Terminal', pn: 'EN-SN-99', img: '' }
   ];
-  // Consistent random choice based on ID to avoid flickering
   const index = id.charCodeAt(id.length - 1) % products.length;
   const prod = products[index];
   
@@ -278,8 +165,6 @@ const ACTION_ITEMS_MOCK: ActionItem[] = [
   { id: '6', machineId: 'MD-5', title: 'Mold 05 - Feed Jam', status: 'doing', strategy: 'Clear hopper bridge, reset feeder motor.', owner: 'John D.', ownerAvatar: '', priority: 'medium', timeAgo: '5m' },
 ];
 
-// --- DYNAMIC DATA GENERATION ---
-
 const getSnapshots = (t: any): Record<number, Snapshot> => ({
   0: { // 09:00 AM - START
     time: "09:00",
@@ -354,20 +239,20 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
       { id: 'cpk', label: 'Avg CpK', value: 1.5, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
-      // Primary Critical Group (5 items)
+      // Primary Critical Group
       { id: 'L1', name: 'Press 04', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}], currentProduct: getMockProduct('stamping', 'L1', 45) },
       { id: 'PL-3', name: 'Plating 03', processType: 'plating', status: 'warning', issue: 'pH Level Drift', oee: 88, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-3', 88) },
       { id: 'MD-2', name: 'Mold 02', processType: 'molding', status: 'warning', issue: 'Temp Drift', oee: 79, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('molding', 'MD-2', 79) },
       { id: 'ST-5', name: 'Press 05', processType: 'stamping', status: 'warning', issue: 'Sensor Fault', oee: 81, cycleTime: 9, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-5', 81) },
       { id: 'AS-1', name: 'Assembly 01', processType: 'assembly', status: 'critical', issue: 'Material Jam', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-1', 0) },
       
-      // Secondary Group (4 items)
+      // Secondary Group
       { id: 'ST-2', name: 'Press 02', processType: 'stamping', status: 'critical', issue: 'Die Crash', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-2', 0) },
       { id: 'PL-1', name: 'Plating 01', processType: 'plating', status: 'warning', issue: 'Filter Clog', oee: 82, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-1', 82) },
       { id: 'MD-8', name: 'Mold 08', processType: 'molding', status: 'warning', issue: 'Robot Fail', oee: 65, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-8', 65) },
       { id: 'AS-4', name: 'Assembly 04', processType: 'assembly', status: 'warning', issue: 'Vision Reject', oee: 76, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-4', 76) },
 
-      // Third Group (4 items) - NEWLY ADDED
+      // Third Group
       { id: 'PL-5', name: 'Plating 05', processType: 'plating', status: 'warning', issue: 'Rectifier Overheat', oee: 85, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-5', 85) },
       { id: 'ST-9', name: 'Press 09', processType: 'stamping', status: 'critical', issue: 'Feeder Sync', oee: 20, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-9', 20) },
       { id: 'MD-4', name: 'Mold 04', processType: 'molding', status: 'warning', issue: 'Hydraulic Leak', oee: 72, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-4', 72) },
@@ -404,11 +289,18 @@ export default function App() {
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
   const [showMobile, setShowMobile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
+  // BOOTLOADER STATE - Default to true on fresh load
+  const [isBooting, setIsBooting] = useState(true);
+
   // UseMemo to regenerate data when language changes
   const snapshots = useMemo(() => getSnapshots(t), [t]);
   const currentData = snapshots[sliderValue];
   const activeLine = currentData.lines.find(l => l.id === selectedLineId);
+
+  // We rely on BootLoader to set a flag or just complete.
+  // Actually, BootLoader component handles its own completion state via callback.
 
   useEffect(() => {
     if (sliderValue === 2) {
@@ -429,20 +321,28 @@ export default function App() {
     return currentData.actions.filter(a => !a.machineId || a.priority === 'high');
   }, [selectedLineId, currentData.actions]);
 
+  // RENDER BOOTLOADER IF NOT READY
+  if (isBooting) {
+    return <BootLoader onComplete={() => setIsBooting(false)} />;
+  }
+
   return (
-    <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden">
+    <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden relative">
       
-      {/* INVISIBLE ASSET GENERATOR */}
+      {/* STATIC ASSET LOADER */}
       <AssetDaemon />
 
+      {/* BACKGROUND AI DAEMON */}
+      <SystemDaemon />
+
       {/* Sidebar */}
-      <SideNav activeView={activeView} onNavigate={setActiveView} />
+      <SideNav activeView={activeView} onNavigate={setActiveView} onOpenSettings={() => setShowSettings(true)} />
 
       {/* Main Content */}
       <main className="flex-1 md:ml-20 lg:ml-64 flex flex-col h-screen overflow-hidden relative transition-all duration-300">
         
         {/* Top Header */}
-        <header className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-40">
+        <header className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-[60]">
           <div>
              <h1 className="text-3xl font-black tracking-tighter text-yellow-400 flex items-center gap-2">
                {t('companyName')} <span className="text-white/30 font-thin text-xl">|</span> {t('hangzhouLoc')}
@@ -453,6 +353,15 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-6 mt-4 md:mt-0">
+            {/* Quick Settings Button */}
+            <button 
+               onClick={() => setShowSettings(true)}
+               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neon-cyan/30 bg-neon-cyan/5 hover:bg-neon-cyan/10 text-xs font-bold text-neon-cyan transition-all shadow-[0_0_10px_rgba(6,182,212,0.1)]"
+            >
+              <Database size={14} />
+              <span>DIGITAL TWIN</span>
+            </button>
+
             {/* Language Toggle */}
             <button 
               onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
@@ -668,6 +577,17 @@ export default function App() {
 
       </main>
 
+      {/* OVERLAY: HIGH-VISIBILITY FAB (FLOATING ACTION BUTTON) */}
+      <button 
+        onClick={() => {
+          setShowSettings(true);
+        }}
+        className="fixed bottom-10 right-10 z-[100] bg-neon-cyan hover:bg-cyan-400 text-black font-black py-4 px-6 rounded-full shadow-[0_0_50px_rgba(6,182,212,0.6)] animate-bounce flex items-center gap-3 transition-transform hover:scale-110 border-4 border-white cursor-pointer"
+      >
+         <SettingsIcon size={24} />
+         <span>DIGITAL TWIN CONSOLE</span>
+      </button>
+
       {/* Overlays / Modals */}
       
       {/* 1. Process Drill Down Modal */}
@@ -694,7 +614,7 @@ export default function App() {
 
       {/* 3. Mobile App Simulation */}
       {showMobile && (
-        <div className="fixed bottom-4 right-4 z-50 w-[300px] h-[600px] bg-white rounded-[40px] border-8 border-gray-900 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-500">
+        <div className="fixed bottom-4 right-4 z-[90] w-[300px] h-[600px] bg-white rounded-[40px] border-8 border-gray-900 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-500">
            <div className="bg-gray-900 h-6 w-1/2 mx-auto rounded-b-xl mb-2"></div>
            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto text-gray-800">
               <div className="flex justify-between items-center mb-6">
@@ -722,6 +642,11 @@ export default function App() {
               </button>
            </div>
         </div>
+      )}
+
+      {/* 4. Settings/Generator Modal */}
+      {showSettings && (
+         <SettingsModal onClose={() => setShowSettings(false)} />
       )}
 
     </div>

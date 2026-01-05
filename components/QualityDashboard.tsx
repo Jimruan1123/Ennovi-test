@@ -56,7 +56,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ data }) => {
               <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
                     <Pie
-                       data={data.coqp}
+                       data={data.coqp as any}
                        dataKey="cost"
                        nameKey="category"
                        cx="50%"

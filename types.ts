@@ -131,3 +131,17 @@ export interface WorkshopData {
   lines: ProductionLine[];
   issues: ActionItem[];
 }
+
+export interface Snapshot {
+  time: string;
+  label: string;
+  kpis: KPI[];
+  lines: ProductionLine[];
+  materials: MaterialStatus[];
+  customers: Customer[];
+  suppliers: SupplierRisk[];
+  qualityData: QualityData;
+  workshops: WorkshopData[];
+  actions: ActionItem[];
+  spcData: { time: string; v: number }[];
+}

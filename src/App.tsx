@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, 
-  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid
+  AreaChart, Area, XAxis, YAxis, Tooltip
 } from 'recharts';
 import { 
-  Activity, AlertCircle, Clock, CheckCircle2, 
-  RefreshCw, Smartphone, X, Zap, ChevronRight, Menu, Truck, ShieldAlert, Layers, Globe
+  Clock, CheckCircle2, Smartphone, X, Globe
 } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { KPIRing } from './components/KPIRing';
@@ -16,59 +16,18 @@ import { ProcessDrillDown } from './components/ProcessDrillDown';
 import { SupplierPanel } from './components/SupplierPanel';
 import { QualityDashboard } from './components/QualityDashboard';
 import { ProductionShopView } from './components/ProductionShopView';
-import { KPI, ProductionLine, ActionItem, MaterialStatus, Customer, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint } from './types';
+import { BootLoader } from './components/BootLoader';
+import { ProductionLine, ActionItem, SupplierRisk, QualityData, SOPData, WorkshopData, Complaint, Snapshot } from './types';
 import { useLanguage } from './contexts/LanguageContext';
-import { STATIC_ASSETS } from './data/staticAssets';
 
-// --- ASSET DAEMON: STATIC LOADER ---
-// This runs on startup to populate localStorage with our pre-baked high-quality assets.
-// This removes the need for an API Key on Vercel while keeping the "Digital Twin" look.
-const AssetDaemon = () => {
-  useEffect(() => {
-    let hasUpdates = false;
+// --- MOCK DATA GENERATION UTILS ---
 
-    Object.entries(STATIC_ASSETS).forEach(([key, value]) => {
-      // We overwrite to ensure everyone gets the latest static version
-      if (localStorage.getItem(key) !== value) {
-        localStorage.setItem(key, value);
-        hasUpdates = true;
-      }
-    });
-
-    if (hasUpdates) {
-      window.dispatchEvent(new Event('assetUpdated'));
-      console.log("Daemon: Static assets loaded successfully.");
-    }
-  }, []);
-
-  return null;
-};
-
-
-// --- ENNOVI MOCK DATA GENERATORS ---
-
-type Snapshot = {
-  time: string;
-  label: string;
-  kpis: KPI[];
-  lines: ProductionLine[];
-  materials: MaterialStatus[];
-  customers: Customer[];
-  suppliers: SupplierRisk[];
-  qualityData: QualityData;
-  workshops: WorkshopData[];
-  actions: ActionItem[];
-  spcData: any[];
-};
-
-// Mock Product Helper
 const getMockProduct = (type: string, id: string, targetOee?: number) => {
   const products = [
      { name: 'HV Connector Hsg', pn: 'EN-884-X', img: '' },
      { name: 'Busbar Clip', pn: 'EN-BB-02', img: '' },
      { name: 'Sensor Terminal', pn: 'EN-SN-99', img: '' }
   ];
-  // Consistent random choice based on ID to avoid flickering
   const index = id.charCodeAt(id.length - 1) % products.length;
   const prod = products[index];
   
@@ -105,6 +64,8 @@ const generateExtraLines = (baseId: string, count: number, type: any, startIdx: 
     };
   });
 };
+
+// --- STATIC MOCK DATA CONSTANTS ---
 
 const SUPPLIERS_DATA: SupplierRisk[] = [
   { id: 'S1', name: 'Wieland Metal', riskLevel: 2, category: 'Raw Material (DE)' },
@@ -180,10 +141,8 @@ const ACTION_ITEMS_MOCK: ActionItem[] = [
   { id: '6', machineId: 'MD-5', title: 'Mold 05 - Feed Jam', status: 'doing', strategy: 'Clear hopper bridge, reset feeder motor.', owner: 'John D.', ownerAvatar: '', priority: 'medium', timeAgo: '5m' },
 ];
 
-// --- DYNAMIC DATA GENERATION ---
-
 const getSnapshots = (t: any): Record<number, Snapshot> => ({
-  0: { // 09:00 AM - START
+  0: { // 09:00 AM
     time: "09:00",
     label: t('shiftStart'),
     kpis: [
@@ -214,7 +173,7 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
     actions: ACTION_ITEMS_MOCK,
     spcData: [{time: '08:00', v: 1.66}, {time: '08:15', v: 1.67}, {time: '08:30', v: 1.68}, {time: '08:45', v: 1.65}, {time: '09:00', v: 1.67}]
   },
-  1: { // 11:00 AM - WARNING
+  1: { // 11:00 AM
     time: "11:00",
     label: t('resinWarning'),
     kpis: [
@@ -246,7 +205,7 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
     actions: ACTION_ITEMS_MOCK,
     spcData: [{time: '09:00', v: 1.67}, {time: '09:30', v: 1.65}, {time: '10:00', v: 1.62}, {time: '10:30', v: 1.58}, {time: '11:00', v: 1.55}]
   },
-  2: { // 14:00 PM - CRITICAL
+  2: { // 14:00 PM
     time: "14:00",
     label: t('lineStop'),
     kpis: [
@@ -256,20 +215,20 @@ const getSnapshots = (t: any): Record<number, Snapshot> => ({
       { id: 'cpk', label: 'Avg CpK', value: 1.5, unit: '', target: 1.33, status: 'normal', trend: 'flat', responsible: '' },
     ],
     lines: [
-      // Primary Critical Group (5 items)
+      // Primary Critical Group
       { id: 'L1', name: 'Press 04', processType: 'stamping', status: 'critical', issue: 'Slug Control Error', oee: 45, cycleTime: 0, telemetry: [{name: 'Press Force', value: 0, unit: 'kN', status: 'critical'}, {name: 'SPM', value: 0, unit: '', status: 'critical'}], currentProduct: getMockProduct('stamping', 'L1', 45) },
       { id: 'PL-3', name: 'Plating 03', processType: 'plating', status: 'warning', issue: 'pH Level Drift', oee: 88, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-3', 88) },
       { id: 'MD-2', name: 'Mold 02', processType: 'molding', status: 'warning', issue: 'Temp Drift', oee: 79, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('molding', 'MD-2', 79) },
       { id: 'ST-5', name: 'Press 05', processType: 'stamping', status: 'warning', issue: 'Sensor Fault', oee: 81, cycleTime: 9, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-5', 81) },
       { id: 'AS-1', name: 'Assembly 01', processType: 'assembly', status: 'critical', issue: 'Material Jam', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-1', 0) },
       
-      // Secondary Group (4 items)
+      // Secondary Group
       { id: 'ST-2', name: 'Press 02', processType: 'stamping', status: 'critical', issue: 'Die Crash', oee: 0, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-2', 0) },
       { id: 'PL-1', name: 'Plating 01', processType: 'plating', status: 'warning', issue: 'Filter Clog', oee: 82, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-1', 82) },
       { id: 'MD-8', name: 'Mold 08', processType: 'molding', status: 'warning', issue: 'Robot Fail', oee: 65, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-8', 65) },
       { id: 'AS-4', name: 'Assembly 04', processType: 'assembly', status: 'warning', issue: 'Vision Reject', oee: 76, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('assembly', 'AS-4', 76) },
 
-      // Third Group (4 items) - NEWLY ADDED
+      // Third Group
       { id: 'PL-5', name: 'Plating 05', processType: 'plating', status: 'warning', issue: 'Rectifier Overheat', oee: 85, cycleTime: 10, telemetry: [], currentProduct: getMockProduct('plating', 'PL-5', 85) },
       { id: 'ST-9', name: 'Press 09', processType: 'stamping', status: 'critical', issue: 'Feeder Sync', oee: 20, cycleTime: 12, telemetry: [], currentProduct: getMockProduct('stamping', 'ST-9', 20) },
       { id: 'MD-4', name: 'Mold 04', processType: 'molding', status: 'warning', issue: 'Hydraulic Leak', oee: 72, cycleTime: 0, telemetry: [], currentProduct: getMockProduct('molding', 'MD-4', 72) },
@@ -307,13 +266,18 @@ export default function App() {
   const [showQR, setShowQR] = useState(false);
   const [showMobile, setShowMobile] = useState(false);
   
-  // UseMemo to regenerate data when language changes
+  // BOOTLOADER STATE
+  const [isBooting, setIsBooting] = useState(true);
+
+  // Memoized Data Snapshots
   const snapshots = useMemo(() => getSnapshots(t), [t]);
   const currentData = snapshots[sliderValue];
   const activeLine = currentData.lines.find(l => l.id === selectedLineId);
 
+  // Auto-Select Logic for Demo
   useEffect(() => {
     if (sliderValue === 2) {
+      // Auto-select the critical machine at 14:00
       setSelectedLineId('L1');
     } else {
       setSelectedLineId(null);
@@ -331,20 +295,22 @@ export default function App() {
     return currentData.actions.filter(a => !a.machineId || a.priority === 'high');
   }, [selectedLineId, currentData.actions]);
 
+  // RENDER BOOTLOADER
+  if (isBooting) {
+    return <BootLoader onComplete={() => setIsBooting(false)} />;
+  }
+
   return (
-    <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden">
+    <div className="flex min-h-screen bg-transparent font-sans text-gray-100 overflow-hidden relative">
       
-      {/* STATIC ASSET LOADER */}
-      <AssetDaemon />
+      {/* Sidebar Navigation */}
+      <SideNav activeView={activeView} onNavigate={setActiveView} onOpenSettings={() => {}} />
 
-      {/* Sidebar */}
-      <SideNav activeView={activeView} onNavigate={setActiveView} />
-
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex-1 md:ml-20 lg:ml-64 flex flex-col h-screen overflow-hidden relative transition-all duration-300">
         
-        {/* Top Header */}
-        <header className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-40">
+        {/* Header */}
+        <header className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-[60]">
           <div>
              <h1 className="text-3xl font-black tracking-tighter text-yellow-400 flex items-center gap-2">
                {t('companyName')} <span className="text-white/30 font-thin text-xl">|</span> {t('hangzhouLoc')}
@@ -393,14 +359,14 @@ export default function App() {
           </div>
         </header>
 
-        {/* Dynamic Content Area */}
+        {/* Dynamic Viewport */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 relative custom-scrollbar">
           
-          {/* View: Command Center (Cockpit) */}
+          {/* VIEW: COCKPIT (Dashboard) */}
           {activeView === 'cockpit' && (
             <div className="grid grid-cols-12 gap-6 pb-20">
               
-              {/* Left Column: Resources (Input) */}
+              {/* Left Column: Input Factors */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-left duration-500 z-30">
                 <GlassCard title={t('materialReadiness')} subTitle={t('materialSub')}>
                    <div className="h-[250px] w-full">
@@ -430,10 +396,10 @@ export default function App() {
                 </GlassCard>
               </div>
 
-              {/* Middle Column: Results (KPIs) */}
+              {/* Middle Column: Central Results */}
               <div className="col-span-12 lg:col-span-6 flex flex-col gap-6 z-20">
                 
-                {/* Executive KPIs */}
+                {/* KPIs Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {currentData.kpis.map((kpi) => (
                     <KPIRing 
@@ -445,7 +411,7 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Factory Map */}
+                {/* Main Map */}
                 <GlassCard 
                   title={t('productionAlert')}
                   subTitle={t('productionAlertSub')}
@@ -468,10 +434,9 @@ export default function App() {
                 </GlassCard>
               </div>
 
-              {/* Right Column: Process & Actions */}
+              {/* Right Column: Action Center */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 animate-in slide-in-from-right duration-500 z-30">
                  
-                 {/* Action Center */}
                  <GlassCard 
                     title={t('actionCenter')}
                     subTitle={selectedLineId ? `${t('strategyFor')} ${selectedLineId}` : t('taskForce')}
@@ -510,7 +475,6 @@ export default function App() {
                         <div className="text-center text-gray-500 py-4 text-xs">{t('noActions')}</div>
                       )}
 
-                      {/* Manual Assignment Override */}
                       {currentData.kpis[0].status === 'critical' && !selectedLineId && (
                          <div className="p-3 bg-red-900/10 border border-red-500/30 rounded text-center">
                             <span className="text-xs text-red-400 animate-pulse">{t('selectRedMachine')}</span>
@@ -540,24 +504,24 @@ export default function App() {
             </div>
           )}
 
-          {/* View: Customers */}
+          {/* VIEW: CUSTOMERS */}
           {activeView === 'customers' && (
             <CustomerPanel customers={currentData.customers} />
           )}
 
-          {/* View: Quality */}
+          {/* VIEW: QUALITY */}
           {activeView === 'quality' && (
              <QualityDashboard data={currentData.qualityData} />
           )}
 
-          {/* View: Production (Digital Twin) */}
+          {/* VIEW: PRODUCTION */}
           {activeView === 'production' && (
             <ProductionShopView workshops={currentData.workshops} />
           )}
 
         </div>
 
-        {/* Global Bottom Ticker */}
+        {/* Global Footer / Ticker */}
         <div className="absolute bottom-0 left-0 w-full bg-[#0B1120] border-t border-white/10 h-8 flex items-center overflow-hidden z-30">
            <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-12 text-xs font-mono text-gray-500 px-4">
               <span>{t('systemStatus')}</span>
@@ -570,14 +534,14 @@ export default function App() {
 
       </main>
 
-      {/* Overlays / Modals */}
+      {/* --- MODALS --- */}
       
-      {/* 1. Process Drill Down Modal */}
+      {/* 1. Process Details */}
       {activeLine && (
         <ProcessDrillDown line={activeLine} onClose={() => setSelectedLineId(null)} />
       )}
 
-      {/* 2. QR Code Modal */}
+      {/* 2. QR Simulation */}
       {showQR && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
            <div className="bg-white p-6 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full text-black">
@@ -585,7 +549,6 @@ export default function App() {
               <p className="text-sm text-center text-gray-600">{t('scanToOpen')}</p>
               <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-black">
                  <Smartphone size={64} className="text-black/20" />
-                 {/* Fake QR pattern would go here */}
               </div>
               <button onClick={() => {setShowQR(false); setShowMobile(true);}} className="w-full py-3 bg-black text-white rounded-lg font-bold hover:bg-gray-800">
                 {t('simulateScan')}
@@ -594,9 +557,9 @@ export default function App() {
         </div>
       )}
 
-      {/* 3. Mobile App Simulation */}
+      {/* 3. Mobile App */}
       {showMobile && (
-        <div className="fixed bottom-4 right-4 z-50 w-[300px] h-[600px] bg-white rounded-[40px] border-8 border-gray-900 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-500">
+        <div className="fixed bottom-4 right-4 z-[90] w-[300px] h-[600px] bg-white rounded-[40px] border-8 border-gray-900 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-500">
            <div className="bg-gray-900 h-6 w-1/2 mx-auto rounded-b-xl mb-2"></div>
            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto text-gray-800">
               <div className="flex justify-between items-center mb-6">

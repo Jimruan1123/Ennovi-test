@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, Factory, Users, BarChart3, Settings, Database } from 'lucide-react';
+import { LayoutDashboard, Factory, Users, BarChart3 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SideNavProps {
@@ -8,7 +9,7 @@ interface SideNavProps {
   onOpenSettings: () => void;
 }
 
-export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate, onOpenSettings }) => {
+export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate }) => {
   const { t } = useLanguage();
 
   const navItems = [
@@ -45,13 +46,6 @@ export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate, onOpen
          <div className="px-4 py-2">
             <p className="text-[10px] text-gray-600 font-mono hidden lg:block">SYSTEM V2.4.1</p>
          </div>
-         <button 
-            onClick={onOpenSettings}
-            className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
-         >
-            <Database size={20} />
-            <span className="hidden lg:block text-sm">DIGITAL TWIN CONSOLE</span>
-         </button>
       </div>
     </div>
   );
