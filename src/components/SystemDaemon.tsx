@@ -1,2 +1,10 @@
+
 import React from 'react';
-export const SystemDaemon: React.FC = () => null;
+
+/**
+ * SystemDaemon: Neutralized.
+ * Background AI generation features are disabled for the stable Delivery build.
+ */
+export const SystemDaemon: React.FC = () => {
+  return null;
+};

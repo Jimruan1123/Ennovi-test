@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, 
@@ -113,32 +114,16 @@ export default function App() {
   // DERIVE TOP 3 CONCERNS FOR MANAGEMENT
   const topConcerns = useMemo(() => {
     const concerns: { text: string; type: 'critical' | 'warning' }[] = [];
-    
-    // 1. Line Stops (Delivery Impact)
     currentData.lines.filter(l => l.status === 'critical').forEach(l => {
-      concerns.push({ text: `[PROD] CRITICAL: ${l.name} STOPPED - IMMEDIATE DELIVERY IMPACT`, type: 'critical' });
+      concerns.push({ text: `[PROD] CRITICAL: ${l.name} STOPPED - IMPACT ON CUSTOMER DELIVERY`, type: 'critical' });
     });
-
-    // 2. Material Scarcity (Future Risk)
-    currentData.materials.filter(m => m.readiness < 30).forEach(m => {
+    currentData.materials.filter(m => m.readiness < 40).forEach(m => {
       concerns.push({ text: `[SUPPLY] ALERT: ${m.category} STOCK LEVEL @ ${m.readiness}% - SHORTAGE RISK`, type: 'critical' });
     });
-
-    // 3. Efficiency Drops
     if (currentData.kpis[0].status === 'critical') {
-      concerns.push({ text: `[EXEC] PERFORMANCE: PLANT OEE PLUMMETED TO ${currentData.kpis[0].value}%`, type: 'critical' });
-    } else if (currentData.kpis[0].status === 'warning') {
-      concerns.push({ text: `[EXEC] WARNING: PLANT OEE TRENDING DOWN @ ${currentData.kpis[0].value}%`, type: 'warning' });
+      concerns.push({ text: `[EXEC] PERFORMANCE: PLANT OEE DROPPED TO ${currentData.kpis[0].value}%`, type: 'critical' });
     }
-
-    // Secondary warnings if we don't have enough criticals
-    if (concerns.length < 3) {
-      currentData.materials.filter(m => m.readiness >= 30 && m.readiness < 60).forEach(m => {
-        concerns.push({ text: `[SUPPLY] WARNING: ${m.category} INVENTORY AT RISK (${m.readiness}%)`, type: 'warning' });
-      });
-    }
-
-    return concerns.slice(0, 3);
+    return concerns.length > 0 ? concerns.slice(0, 3) : null;
   }, [currentData]);
 
   if (isBooting) return <BootLoader onComplete={() => setIsBooting(false)} />;
@@ -187,43 +172,38 @@ export default function App() {
           </div>
         </header>
 
-        {/* --- DYNAMIC FACTORY ALERT TICKER (TOP 3 CONCERNS) --- */}
-        <div className="bg-red-950/60 border-b border-red-500/30 h-10 flex items-center overflow-hidden z-[55] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-           <div className="flex items-center gap-4 px-6 shrink-0 border-r border-red-500/20 bg-red-900/40 h-full">
-              <ShieldAlert size={16} className="text-red-500 animate-pulse" />
-              <span className="text-[10px] font-black text-red-500 tracking-tight uppercase whitespace-nowrap">War Room Alerts</span>
+        {/* --- FACTORY ALERT MARQUEE (TOP 3) --- */}
+        <div className="bg-red-950/60 border-b border-red-500/30 h-12 flex items-center overflow-hidden z-[55] shadow-2xl">
+           <div className="flex items-center gap-4 px-6 shrink-0 border-r border-red-500/20 bg-red-900/60 h-full">
+              <ShieldAlert size={18} className="text-red-500 animate-pulse" />
+              <span className="text-xs font-black text-red-500 tracking-widest uppercase whitespace-nowrap">War Room Alerts</span>
            </div>
            <div className="flex-1 overflow-hidden relative">
               <div className="flex gap-24 whitespace-nowrap animate-marquee items-center min-w-full px-12">
-                 {topConcerns.length > 0 ? (
+                 {topConcerns ? (
                    <>
-                    {/* Duplicate contents for seamless marquee loop */}
                     {[...topConcerns, ...topConcerns].map((concern, idx) => (
                       <div key={idx} className="flex items-center gap-3">
-                         <div className={`w-2 h-2 rounded-full ${concern.type === 'critical' ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-orange-500'}`} />
-                         <span className={`text-[12px] font-black font-mono tracking-widest ${concern.type === 'critical' ? 'text-red-400' : 'text-orange-400'}`}>
+                         <div className={`w-2.5 h-2.5 rounded-full ${concern.type === 'critical' ? 'bg-red-500 shadow-[0_0_12px_#ef4444]' : 'bg-orange-500'}`} />
+                         <span className={`text-[13px] font-black font-mono tracking-[0.15em] ${concern.type === 'critical' ? 'text-red-400' : 'text-orange-400'}`}>
                            {concern.text}
                          </span>
-                         {idx < 5 && <ArrowRight size={14} className="text-gray-600 mx-2" />}
+                         {idx < 5 && <ArrowRight size={14} className="text-gray-700 mx-4" />}
                       </div>
                     ))}
                    </>
                  ) : (
-                   <span className="text-[12px] font-bold font-mono text-green-500 tracking-[0.3em] uppercase">
-                     >>> STATUS: ALL DELIVERY PARAMETERS WITHIN TOLERANCE. FACTORY IS STABLE. <<<
+                   <span className="text-[12px] font-bold font-mono text-green-500 tracking-[0.4em] uppercase">
+                     >>> STATUS: ALL CORE METRICS WITHIN NORMAL OPERATING PARAMETERS <<<
                    </span>
                  )}
               </div>
            </div>
         </div>
 
-        {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 relative custom-scrollbar">
-          
           {activeView === 'cockpit' && (
             <div className="grid grid-cols-12 gap-6 pb-24">
-              
-              {/* Left Side: Resources */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
                 <GlassCard title={t('materialReadiness')} subTitle={t('materialSub')} variant={sliderValue === 2 ? 'critical' : 'default'}>
                    <div className="h-[250px] w-full">
@@ -235,24 +215,14 @@ export default function App() {
                         </RadarChart>
                       </ResponsiveContainer>
                    </div>
-                   <div className="grid grid-cols-1 gap-2 mt-2">
-                      {currentData.materials.map((m, i) => (
-                        <div key={i} className={`flex justify-between items-center text-[11px] px-3 py-1.5 rounded bg-white/5 border ${m.readiness < 40 ? 'border-red-500/40 text-red-400' : 'border-gray-800 text-gray-400'}`}>
-                           <span className="font-bold">{m.category}</span>
-                           <span className="font-mono">{m.readiness}%</span>
-                        </div>
-                      ))}
-                   </div>
                 </GlassCard>
-                
                 <GlassCard title={t('supplierHealth')} subTitle={t('supplierSub')}>
                     <div className="p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-lg flex items-center justify-center h-20">
-                       <span className="text-xs text-gray-500 font-mono italic">Tier-1 Connectivity Active</span>
+                       <span className="text-[10px] text-gray-500 font-mono italic">Tier-1 Logistics Active</span>
                     </div>
                 </GlassCard>
               </div>
 
-              {/* Center: Live Map & KPIs */}
               <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {currentData.kpis.map((kpi) => (
@@ -263,77 +233,51 @@ export default function App() {
                     />
                   ))}
                 </div>
-                <GlassCard 
-                  title={t('productionAlert')} 
-                  subTitle={t('productionAlertSub')} 
-                  className="flex-1 min-h-[450px] !overflow-visible"
-                  variant={currentData.kpis[0].status === 'critical' ? 'critical' : 'default'}
-                >
-                  <FactoryMap 
-                    lines={currentData.lines} 
-                    onLineClick={setSelectedLineId}
-                    activeLineId={selectedLineId}
-                  />
+                <GlassCard title={t('productionAlert')} subTitle={t('productionAlertSub')} className="flex-1 min-h-[450px] !overflow-visible" variant={currentData.kpis[0].status === 'critical' ? 'critical' : 'default'}>
+                  <FactoryMap lines={currentData.lines} onLineClick={setSelectedLineId} activeLineId={selectedLineId} />
                 </GlassCard>
               </div>
 
-              {/* Right: Actions */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
                  <GlassCard title={t('actionCenter')} subTitle={t('taskForce')} variant={sliderValue === 2 ? 'warning' : 'default'}>
                     <div className="flex flex-col gap-4">
                       {currentData.lines.filter(l => l.status !== 'normal').map(l => (
-                        <div key={l.id} className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 animate-in slide-in-from-right duration-300">
-                           <div className="flex justify-between items-center text-xs font-black text-red-500 mb-2">
-                              <span className="tracking-widest uppercase">CRITICAL FAULT: {l.id}</span>
+                        <div key={l.id} className="p-4 rounded-xl bg-red-950/20 border border-red-500/30">
+                           <div className="flex justify-between items-center text-[10px] font-black text-red-500 mb-2">
+                              <span>FAULT ID: {l.id}</span>
                               <Zap size={14} className="fill-red-500" />
                            </div>
                            <h4 className="text-sm font-bold text-white mb-1">{l.name}</h4>
                            <p className="text-xs text-gray-400 mb-3">{l.issue}</p>
-                           <button className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase rounded shadow-lg shadow-red-500/20">
-                             Acknowledge & Assign
-                           </button>
+                           <button className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase rounded">ACKNOWLEDGE</button>
                         </div>
                       ))}
-                      
                       {currentData.lines.filter(l => l.status !== 'normal').length === 0 && (
                          <div className="flex flex-col items-center py-12 opacity-30">
                             <CheckCircle2 size={48} className="mb-4" />
-                            <span className="text-xs font-bold uppercase tracking-widest">No Active Tickets</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Nominal</span>
                          </div>
                       )}
-                    </div>
-                 </GlassCard>
-                 
-                 <GlassCard title={t('spcMonitor')} subTitle={t('qualityControl')}>
-                    <div className="h-40 bg-black/40 rounded flex items-center justify-center text-gray-600 text-xs font-mono">
-                       TELEMETRY FEED STANDBY
                     </div>
                  </GlassCard>
               </div>
             </div>
           )}
-
           {activeView === 'customers' && <CustomerPanel customers={[]} />}
           {activeView === 'quality' && <QualityDashboard data={{fpyTrend:[], coqp:[], pareto:[]}} />}
           {activeView === 'production' && <ProductionShopView workshops={[]} />}
         </div>
 
-        {/* Global Footer Ticker */}
         <div className="absolute bottom-0 left-0 w-full bg-[#0B1120] border-t border-white/10 h-8 flex items-center overflow-hidden z-30">
            <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-12 text-[10px] font-mono text-gray-500 px-4 uppercase tracking-widest">
               <span>{t('systemStatus')}</span>
               <span className="text-yellow-400">LAST REFRESH: {currentData.time} (UTC+8)</span>
-              <span>BANDWIDTH: 1.2 GBPS</span>
-              <span>ENC: AES-256</span>
-              <span>ERP BRIDGE: ACTIVE</span>
+              <span>HUB LATENCY: 12ms</span>
            </div>
         </div>
       </main>
 
-      {activeLine && (
-        <ProcessDrillDown line={activeLine} onClose={() => setSelectedLineId(null)} />
-      )}
-
+      {activeLine && <ProcessDrillDown line={activeLine} onClose={() => setSelectedLineId(null)} />}
     </div>
   );
 }
