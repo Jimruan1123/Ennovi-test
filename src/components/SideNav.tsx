@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LayoutDashboard, Factory, Users, BarChart3 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -42,9 +41,9 @@ export const SideNav: React.FC<SideNavProps> = ({ activeView, onNavigate }) => {
         ))}
       </div>
 
-      <div className="mt-auto px-3 flex flex-col gap-2">
+      <div className="mt-auto px-3 flex flex-col gap-2 border-t border-white/5 pt-4">
          <div className="px-4 py-2">
-            <p className="text-[10px] text-gray-600 font-mono hidden lg:block">SYSTEM V2.4.1</p>
+            <p className="text-[10px] text-gray-600 font-mono hidden lg:block tracking-widest">SYSTEM V3.0 STABLE</p>
          </div>
       </div>
     </div>
