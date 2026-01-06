@@ -1,5 +1,5 @@
 {
-  "name": "Digital Command Center",
-  "description": "A modular, high-fidelity digital cockpit for manufacturing delivery management. Features linked causality visualization, glassmorphism UI, and simulated real-time data sync.",
+  "name": "Delivery War Room DCC",
+  "description": "A mission-critical management cockpit focused on manufacturing delivery, throughput, and risk mitigation.",
   "requestFramePermissions": []
 }

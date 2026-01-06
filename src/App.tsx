@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip
 } from 'recharts';
 import { 
-  Clock, CheckCircle2, Smartphone, X, Globe, AlertTriangle, ShieldAlert, Zap
+  Clock, CheckCircle2, Smartphone, X, Globe, AlertTriangle, ShieldAlert, Zap, ArrowRight
 } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { KPIRing } from './components/KPIRing';
@@ -110,18 +110,35 @@ export default function App() {
   const currentData = snapshots[sliderValue];
   const activeLine = currentData.lines.find(l => l.id === selectedLineId);
 
-  const topAlerts = useMemo(() => {
-    const alerts: { text: string; type: 'critical' | 'warning' }[] = [];
+  // DERIVE TOP 3 CONCERNS FOR MANAGEMENT
+  const topConcerns = useMemo(() => {
+    const concerns: { text: string; type: 'critical' | 'warning' }[] = [];
+    
+    // 1. Line Stops (Delivery Impact)
     currentData.lines.filter(l => l.status === 'critical').forEach(l => {
-      alerts.push({ text: `CRITICAL: ${l.name} STOPPED - ${l.issue}`, type: 'critical' });
+      concerns.push({ text: `[PROD] CRITICAL: ${l.name} STOPPED - IMMEDIATE DELIVERY IMPACT`, type: 'critical' });
     });
-    currentData.materials.filter(m => m.readiness < 50).forEach(m => {
-      alerts.push({ text: `INVENTORY: ${m.category} STOCK LEVEL @ ${m.readiness}%`, type: m.readiness < 20 ? 'critical' : 'warning' });
+
+    // 2. Material Scarcity (Future Risk)
+    currentData.materials.filter(m => m.readiness < 30).forEach(m => {
+      concerns.push({ text: `[SUPPLY] ALERT: ${m.category} STOCK LEVEL @ ${m.readiness}% - SHORTAGE RISK`, type: 'critical' });
     });
-    if (currentData.kpis[0].status !== 'normal') {
-      alerts.push({ text: `PERFORMANCE: PLANT OEE DROPPED TO ${currentData.kpis[0].value}%`, type: 'critical' });
+
+    // 3. Efficiency Drops
+    if (currentData.kpis[0].status === 'critical') {
+      concerns.push({ text: `[EXEC] PERFORMANCE: PLANT OEE PLUMMETED TO ${currentData.kpis[0].value}%`, type: 'critical' });
+    } else if (currentData.kpis[0].status === 'warning') {
+      concerns.push({ text: `[EXEC] WARNING: PLANT OEE TRENDING DOWN @ ${currentData.kpis[0].value}%`, type: 'warning' });
     }
-    return alerts.length > 0 ? alerts.slice(0, 3) : null;
+
+    // Secondary warnings if we don't have enough criticals
+    if (concerns.length < 3) {
+      currentData.materials.filter(m => m.readiness >= 30 && m.readiness < 60).forEach(m => {
+        concerns.push({ text: `[SUPPLY] WARNING: ${m.category} INVENTORY AT RISK (${m.readiness}%)`, type: 'warning' });
+      });
+    }
+
+    return concerns.slice(0, 3);
   }, [currentData]);
 
   if (isBooting) return <BootLoader onComplete={() => setIsBooting(false)} />;
@@ -147,7 +164,7 @@ export default function App() {
           <div className="flex items-center gap-6 mt-4 md:mt-0">
             <button 
               onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-300 transition-all"
             >
               <Globe size={14} />
               <span>{language === 'en' ? 'EN' : '中文'}</span>
@@ -164,66 +181,78 @@ export default function App() {
                 />
               </div>
               <div className="text-right">
-                <div className="text-xl font-mono font-bold">{currentData.time}</div>
+                <div className="text-xl font-mono font-bold text-white">{currentData.time}</div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* --- FACTORY ALERT TICKER --- */}
-        <div className="bg-red-950/40 border-b border-red-500/30 h-10 flex items-center overflow-hidden z-[55]">
+        {/* --- DYNAMIC FACTORY ALERT TICKER (TOP 3 CONCERNS) --- */}
+        <div className="bg-red-950/60 border-b border-red-500/30 h-10 flex items-center overflow-hidden z-[55] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
            <div className="flex items-center gap-4 px-6 shrink-0 border-r border-red-500/20 bg-red-900/40 h-full">
               <ShieldAlert size={16} className="text-red-500 animate-pulse" />
-              <span className="text-[10px] font-black text-red-500 tracking-tighter uppercase whitespace-nowrap">Critical Alerts</span>
+              <span className="text-[10px] font-black text-red-500 tracking-tight uppercase whitespace-nowrap">War Room Alerts</span>
            </div>
            <div className="flex-1 overflow-hidden relative">
-              <div className="flex gap-20 whitespace-nowrap animate-marquee items-center min-w-full px-10">
-                 {topAlerts ? (
+              <div className="flex gap-24 whitespace-nowrap animate-marquee items-center min-w-full px-12">
+                 {topConcerns.length > 0 ? (
                    <>
-                    {topAlerts.map((alert, idx) => (
+                    {/* Duplicate contents for seamless marquee loop */}
+                    {[...topConcerns, ...topConcerns].map((concern, idx) => (
                       <div key={idx} className="flex items-center gap-3">
-                         <div className={`w-1.5 h-1.5 rounded-full ${alert.type === 'critical' ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-orange-500'}`} />
-                         <span className={`text-[11px] font-bold font-mono tracking-widest ${alert.type === 'critical' ? 'text-red-400' : 'text-orange-400'}`}>
-                           {alert.text}
+                         <div className={`w-2 h-2 rounded-full ${concern.type === 'critical' ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-orange-500'}`} />
+                         <span className={`text-[12px] font-black font-mono tracking-widest ${concern.type === 'critical' ? 'text-red-400' : 'text-orange-400'}`}>
+                           {concern.text}
                          </span>
-                      </div>
-                    ))}
-                    {/* Repeat for seamless loop */}
-                    {topAlerts.map((alert, idx) => (
-                      <div key={`dup-${idx}`} className="flex items-center gap-3">
-                         <div className={`w-1.5 h-1.5 rounded-full ${alert.type === 'critical' ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-orange-500'}`} />
-                         <span className={`text-[11px] font-bold font-mono tracking-widest ${alert.type === 'critical' ? 'text-red-400' : 'text-orange-400'}`}>
-                           {alert.text}
-                         </span>
+                         {idx < 5 && <ArrowRight size={14} className="text-gray-600 mx-2" />}
                       </div>
                     ))}
                    </>
                  ) : (
-                   <span className="text-[11px] font-bold font-mono text-green-500 tracking-[0.2em] uppercase">
-                     >>> STATUS: ALL SYSTEMS OPERATING WITHIN NOMINAL PARAMETERS <<<
+                   <span className="text-[12px] font-bold font-mono text-green-500 tracking-[0.3em] uppercase">
+                     >>> STATUS: ALL DELIVERY PARAMETERS WITHIN TOLERANCE. FACTORY IS STABLE. <<<
                    </span>
                  )}
               </div>
            </div>
         </div>
 
+        {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 relative custom-scrollbar">
+          
           {activeView === 'cockpit' && (
-            <div className="grid grid-cols-12 gap-6 pb-20">
+            <div className="grid grid-cols-12 gap-6 pb-24">
+              
+              {/* Left Side: Resources */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
-                <GlassCard title={t('materialReadiness')} subTitle={t('materialSub')}>
+                <GlassCard title={t('materialReadiness')} subTitle={t('materialSub')} variant={sliderValue === 2 ? 'critical' : 'default'}>
                    <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={currentData.materials}>
                           <PolarGrid stroke="#333" />
                           <PolarAngleAxis dataKey="category" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                          <Radar name="Stock" dataKey="readiness" stroke="#facc15" fill="#facc15" fillOpacity={0.3} />
+                          <Radar name="Readiness" dataKey="readiness" stroke="#facc15" fill="#facc15" fillOpacity={0.3} />
                         </RadarChart>
                       </ResponsiveContainer>
                    </div>
+                   <div className="grid grid-cols-1 gap-2 mt-2">
+                      {currentData.materials.map((m, i) => (
+                        <div key={i} className={`flex justify-between items-center text-[11px] px-3 py-1.5 rounded bg-white/5 border ${m.readiness < 40 ? 'border-red-500/40 text-red-400' : 'border-gray-800 text-gray-400'}`}>
+                           <span className="font-bold">{m.category}</span>
+                           <span className="font-mono">{m.readiness}%</span>
+                        </div>
+                      ))}
+                   </div>
+                </GlassCard>
+                
+                <GlassCard title={t('supplierHealth')} subTitle={t('supplierSub')}>
+                    <div className="p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-lg flex items-center justify-center h-20">
+                       <span className="text-xs text-gray-500 font-mono italic">Tier-1 Connectivity Active</span>
+                    </div>
                 </GlassCard>
               </div>
 
+              {/* Center: Live Map & KPIs */}
               <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {currentData.kpis.map((kpi) => (
@@ -234,7 +263,12 @@ export default function App() {
                     />
                   ))}
                 </div>
-                <GlassCard title={t('productionAlert')} subTitle={t('productionAlertSub')} className="flex-1 min-h-[400px] !overflow-visible">
+                <GlassCard 
+                  title={t('productionAlert')} 
+                  subTitle={t('productionAlertSub')} 
+                  className="flex-1 min-h-[450px] !overflow-visible"
+                  variant={currentData.kpis[0].status === 'critical' ? 'critical' : 'default'}
+                >
                   <FactoryMap 
                     lines={currentData.lines} 
                     onLineClick={setSelectedLineId}
@@ -243,18 +277,36 @@ export default function App() {
                 </GlassCard>
               </div>
 
+              {/* Right: Actions */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
-                 <GlassCard title={t('actionCenter')} subTitle={t('taskForce')}>
-                    <div className="flex flex-col gap-3">
+                 <GlassCard title={t('actionCenter')} subTitle={t('taskForce')} variant={sliderValue === 2 ? 'warning' : 'default'}>
+                    <div className="flex flex-col gap-4">
                       {currentData.lines.filter(l => l.status !== 'normal').map(l => (
-                        <div key={l.id} className="p-3 rounded-lg bg-white/5 border border-red-500/20">
-                           <div className="flex justify-between text-xs font-bold text-red-400 mb-1">
-                              <span>{l.name} ISSUE</span>
-                              <Zap size={12} />
+                        <div key={l.id} className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 animate-in slide-in-from-right duration-300">
+                           <div className="flex justify-between items-center text-xs font-black text-red-500 mb-2">
+                              <span className="tracking-widest uppercase">CRITICAL FAULT: {l.id}</span>
+                              <Zap size={14} className="fill-red-500" />
                            </div>
-                           <p className="text-[11px] text-gray-300">{l.issue}</p>
+                           <h4 className="text-sm font-bold text-white mb-1">{l.name}</h4>
+                           <p className="text-xs text-gray-400 mb-3">{l.issue}</p>
+                           <button className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase rounded shadow-lg shadow-red-500/20">
+                             Acknowledge & Assign
+                           </button>
                         </div>
                       ))}
+                      
+                      {currentData.lines.filter(l => l.status !== 'normal').length === 0 && (
+                         <div className="flex flex-col items-center py-12 opacity-30">
+                            <CheckCircle2 size={48} className="mb-4" />
+                            <span className="text-xs font-bold uppercase tracking-widest">No Active Tickets</span>
+                         </div>
+                      )}
+                    </div>
+                 </GlassCard>
+                 
+                 <GlassCard title={t('spcMonitor')} subTitle={t('qualityControl')}>
+                    <div className="h-40 bg-black/40 rounded flex items-center justify-center text-gray-600 text-xs font-mono">
+                       TELEMETRY FEED STANDBY
                     </div>
                  </GlassCard>
               </div>
@@ -265,9 +317,22 @@ export default function App() {
           {activeView === 'quality' && <QualityDashboard data={{fpyTrend:[], coqp:[], pareto:[]}} />}
           {activeView === 'production' && <ProductionShopView workshops={[]} />}
         </div>
+
+        {/* Global Footer Ticker */}
+        <div className="absolute bottom-0 left-0 w-full bg-[#0B1120] border-t border-white/10 h-8 flex items-center overflow-hidden z-30">
+           <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-12 text-[10px] font-mono text-gray-500 px-4 uppercase tracking-widest">
+              <span>{t('systemStatus')}</span>
+              <span className="text-yellow-400">LAST REFRESH: {currentData.time} (UTC+8)</span>
+              <span>BANDWIDTH: 1.2 GBPS</span>
+              <span>ENC: AES-256</span>
+              <span>ERP BRIDGE: ACTIVE</span>
+           </div>
+        </div>
       </main>
 
-      {activeLine && <ProcessDrillDown line={activeLine} onClose={() => setSelectedLineId(null)} />}
+      {activeLine && (
+        <ProcessDrillDown line={activeLine} onClose={() => setSelectedLineId(null)} />
+      )}
 
     </div>
   );

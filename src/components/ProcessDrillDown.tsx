@@ -1,173 +1,102 @@
-
 import React from 'react';
 import { ProductionLine } from '../types';
-import { X, Activity, Thermometer, Gauge, Package } from 'lucide-react';
+import { X, Activity, Thermometer, Gauge, Package, FileText } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../contexts/LanguageContext';
+import { STATIC_ASSETS } from '../data/staticAssets';
 
 interface ProcessDrillDownProps {
   line: ProductionLine;
   onClose: () => void;
 }
 
-// --- SVG BLUEPRINT GENERATOR (Pure Vector, No Images) ---
-const getSchematicSVG = (line: ProductionLine) => {
-  const status = line.status;
-  const processType = line.processType;
-  const accent = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f97316' : '#22c55e';
-  const strokeColor = '#60a5fa';
-  
-  let machineGeometry = '';
-  
-  if (processType === 'stamping') {
-    machineGeometry = `
-      <g transform="translate(400, 280) scale(1.2)">
-        <path d="M-120 40 L0 100 L120 40 L0 -20 Z" fill="rgba(30, 58, 138, 0.5)" stroke="${strokeColor}" stroke-width="2" />
-        <path d="M-100 50 L-60 70 L-60 -120 L-100 -140 Z" fill="none" stroke="${strokeColor}" stroke-width="2"/>
-        <path d="M30 55 L70 75 L70 -115 L30 -135 Z" fill="none" stroke="${strokeColor}" stroke-width="2"/>
-        <path d="M-110 -140 L0 -195 L110 -140 L0 -85 Z" fill="rgba(30,58,138,0.8)" stroke="${strokeColor}" stroke-width="2"/>
-        <path d="M-50 -80 L0 -105 L50 -80 L0 -55 Z" fill="${accent}" fill-opacity="0.3" stroke="${accent}" stroke-width="2"></path>
-      </g>
-    `;
-  } else if (processType === 'molding') {
-    machineGeometry = `
-      <g transform="translate(400, 250) scale(1.1)">
-         <path d="M-200 60 L0 160 L200 60 L0 -40 Z" fill="rgba(30, 58, 138, 0.5)" stroke="${strokeColor}" stroke-width="2" />
-         <path d="M-180 0 L-80 50 L-80 -80 L-180 -130 Z" fill="none" stroke="${strokeColor}" stroke-width="2" />
-         <path d="M20 -20 L150 -85 L150 -35 L20 30 Z" fill="none" stroke="${strokeColor}" stroke-width="2" />
-         <path d="M80 -60 L100 -120 L140 -130 L120 -80 Z" fill="${accent}" fill-opacity="0.2" stroke="${accent}" />
-      </g>
-    `;
-  } else {
-    machineGeometry = `
-       <g transform="translate(400, 250) scale(1.3)">
-          <path d="M-200 50 L200 -150" stroke="${strokeColor}" stroke-width="40" stroke-linecap="round" opacity="0.5"/>
-          <ellipse cx="0" cy="50" rx="60" ry="30" fill="none" stroke="${strokeColor}" stroke-width="2" />
-          <path d="M0 50 L0 -50" stroke="${strokeColor}" stroke-width="12" />
-          <path d="M0 -50 L80 -100" stroke="${strokeColor}" stroke-width="8" />
-       </g>
-    `;
-  }
-
-  const svgContent = `
-    <svg width="100%" height="100%" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <pattern id="grid" width="40" height="23" patternUnits="userSpaceOnUse">
-           <path d="M 40 0 L 0 0 0 23" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1"/>
-        </pattern>
-        <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#1e3a8a" />
-          <stop offset="100%" stop-color="#0f172a" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#bg)" />
-      <rect width="100%" height="100%" fill="url(#grid)" transform="skewY(-15)" opacity="0.5" />
-      ${machineGeometry}
-      <text x="30" y="474" font-family="monospace" font-size="12" fill="${strokeColor}" font-weight="bold" opacity="0.8">SCHEMATIC BLUEPRINT // REV.A</text>
-    </svg>
-  `;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent.trim())}`;
-};
-
 export const ProcessDrillDown: React.FC<ProcessDrillDownProps> = ({ line, onClose }) => {
   const { t } = useLanguage();
+  
+  // Direct Static Lookup for reliability
+  const assetKey = `global_asset_v7_${line.processType}`;
+  // @ts-ignore
+  const machineImg = STATIC_ASSETS[assetKey];
+
   const historyData = Array.from({ length: 20 }, (_, i) => ({
     time: i,
-    value: Math.random() * 100
+    value: Math.floor(70 + Math.random() * 30)
   }));
 
-  const schematic = getSchematicSVG(line);
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl bg-[#0B1120] border border-yellow-400/30 rounded-2xl shadow-[0_0_100px_rgba(250,204,21,0.1)] overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-4xl bg-[#0B1120] border border-white/10 rounded-[2rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+        <div className="flex justify-between items-center p-8 border-b border-white/5 bg-white/2">
           <div>
-            <div className="flex items-center gap-3">
-               <h2 className="text-2xl font-black text-white uppercase tracking-tight">{line.name}</h2>
-               <span className="px-2 py-0.5 rounded border border-yellow-400/30 text-yellow-400 text-xs font-mono">
+            <div className="flex items-center gap-4">
+               <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{line.name}</h2>
+               <span className="px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-[10px] font-black tracking-widest">
                  {line.processType.toUpperCase()}
                </span>
             </div>
-            <p className="text-sm text-gray-400 font-mono mt-1">ASSET_ID: ENV-HZ-{line.id}-001</p>
+            <p className="text-xs text-gray-500 font-mono mt-2 tracking-widest uppercase">Asset Verification: ENV-DCC-{line.id}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
+          <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white border border-white/5">
             <X size={24} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-8 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Main Telemetry Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {line.telemetry.map((metric, idx) => (
-              <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 hover:border-yellow-400/50 transition-colors">
-                <div className="flex justify-between items-start mb-2">
-                   <span className="text-xs text-gray-400 uppercase tracking-wider">{metric.name}</span>
-                   {metric.name.includes("Temp") ? <Thermometer size={14} className="text-yellow-400"/> :
-                    metric.name.includes("Pressure") ? <Gauge size={14} className="text-blue-400"/> :
-                    <Activity size={14} className="text-green-400"/>}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-mono font-bold text-white">{metric.value}</span>
-                  <span className="text-xs text-gray-500">{metric.unit}</span>
-                </div>
-                <div className="w-full bg-gray-800 h-1 mt-3 rounded-full overflow-hidden">
-                   <div className="h-full bg-gradient-to-r from-transparent to-yellow-400 w-[70%]" />
-                </div>
-              </div>
-            ))}
-            
-            {/* OEE Big Card */}
-            <div className="col-span-2 bg-gradient-to-r from-yellow-400/10 to-transparent p-4 rounded-xl border border-yellow-400/20 flex flex-col justify-between">
-               <div className="flex justify-between items-start">
-                 <div>
-                   <span className="text-xs text-yellow-400 font-bold uppercase">{t('realtimeOee')}</span>
-                   <div className="text-4xl font-black text-white mt-1">{line.oee}%</div>
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/2 p-5 rounded-2xl border border-white/5">
+                 <div className="flex justify-between items-start mb-3">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">OEE Real-time</span>
+                    <Activity size={14} className="text-green-400" />
                  </div>
-                 {/* PRODUCT INFO */}
-                 {line.currentProduct && (
-                   <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-2 bg-black/40 px-2 py-1 rounded border border-white/10">
-                        <Package size={12} className="text-gray-400"/>
-                        <span className="text-[10px] text-gray-300">{line.currentProduct.name}</span>
-                      </div>
-                   </div>
-                 )}
-               </div>
-               <div className="h-16 w-full mt-2">
+                 <div className="text-4xl font-black text-white font-mono">{line.oee}%</div>
+              </div>
+              <div className="bg-white/2 p-5 rounded-2xl border border-white/5">
+                 <div className="flex justify-between items-start mb-3">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Output Goal</span>
+                    <Package size={14} className="text-blue-400" />
+                 </div>
+                 <div className="text-4xl font-black text-white font-mono">5k</div>
+              </div>
+            </div>
+
+            <div className="bg-black/40 p-6 rounded-2xl border border-white/5 flex flex-col gap-4">
+               <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Efficiency Trend (24h)</span>
+               <div className="h-32 w-full">
                  <ResponsiveContainer width="100%" height="100%">
                    <AreaChart data={historyData}>
-                     <Area type="monotone" dataKey="value" stroke="#facc15" fill="#facc15" fillOpacity={0.2} strokeWidth={2} />
+                     <Area type="monotone" dataKey="value" stroke="#facc15" fill="#facc15" fillOpacity={0.1} strokeWidth={3} />
                    </AreaChart>
                  </ResponsiveContainer>
                </div>
             </div>
           </div>
 
-          {/* Machine Visualization Container */}
-          <div className="bg-black relative rounded-xl overflow-hidden border border-white/20 min-h-[250px] flex flex-col group">
-             {/* Status Badge */}
-             <div className="absolute top-3 left-3 z-30 flex gap-2">
-                <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded animate-pulse shadow-lg">
-                    SCHEMATIC BLUEPRINT
+          <div className="bg-black/60 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col shadow-inner">
+             <div className="absolute top-4 left-6 z-10">
+                <span className="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                    High-Fidelity Render
                 </span>
              </div>
              
-             {/* Main Viewport */}
-             <div className="flex-1 bg-gray-900 relative flex items-center justify-center overflow-hidden">
-                 <img src={schematic} alt="Blueprint" className="w-full h-full object-cover" />
+             <div className="flex-1 bg-slate-900/50 flex items-center justify-center p-8">
+               {machineImg ? (
+                 <img src={machineImg} alt="Machine" className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" />
+               ) : (
+                 <div className="text-gray-700 font-mono text-xs uppercase tracking-widest">No Visual Data</div>
+               )}
              </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-white/10 bg-black/40 flex flex-wrap justify-end gap-3">
-          <button className="px-6 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-sm rounded transition-colors shadow-lg shadow-yellow-400/20">
-            {t('reqMaint')}
+        {/* Footer */}
+        <div className="p-6 border-t border-white/5 bg-black/20 flex justify-end gap-4">
+          <button className="px-8 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-yellow-400/20 active:scale-95">
+            Log Maintenance Request
           </button>
         </div>
       </div>
